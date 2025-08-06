@@ -1,8 +1,12 @@
 pyspark==3.4.0
 findspark
 pandas
+datasets==2.19.0
+pyarrow>=14.0.2
+numpy>=1.21,<2.0
 tqdm
 emoji
 nltk
 transformers
-torch
+torch>=2.6
+pathos

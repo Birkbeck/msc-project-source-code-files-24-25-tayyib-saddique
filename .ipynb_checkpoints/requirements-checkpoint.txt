@@ -1,8 +1,0 @@
-pyspark==3.4.0
-findspark
-pandas
-tqdm
-emoji
-nltk
-transformers
-torch
