@@ -1,0 +1,16 @@
+
+Democrat sentiment classifier (RandomForest)
+Accuracy: 0.9473
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.95      0.97      0.96     50722
+    positive       0.95      0.91      0.93     32001
+
+    accuracy                           0.95     82723
+   macro avg       0.95      0.94      0.94     82723
+weighted avg       0.95      0.95      0.95     82723
+
+Confusion Matrix:
+[[49136  1586]
+ [ 2773 29228]]

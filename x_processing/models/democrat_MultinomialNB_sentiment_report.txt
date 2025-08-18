@@ -1,0 +1,16 @@
+
+Democrat sentiment classifier (MultinomialNB)
+Accuracy: 0.9320
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.92      0.97      0.95     50722
+    positive       0.96      0.86      0.91     32001
+
+    accuracy                           0.93     82723
+   macro avg       0.94      0.92      0.93     82723
+weighted avg       0.93      0.93      0.93     82723
+
+Confusion Matrix:
+[[49437  1285]
+ [ 4344 27657]]

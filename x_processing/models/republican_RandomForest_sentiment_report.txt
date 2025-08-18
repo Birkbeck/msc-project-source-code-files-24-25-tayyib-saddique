@@ -1,0 +1,16 @@
+
+Republican sentiment classifier (RandomForest)
+Accuracy: 0.9524
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.94      0.95      0.94     38469
+    positive       0.97      0.95      0.96     51685
+
+    accuracy                           0.95     90154
+   macro avg       0.95      0.95      0.95     90154
+weighted avg       0.95      0.95      0.95     90154
+
+Confusion Matrix:
+[[36727  1742]
+ [ 2547 49138]]

@@ -1,0 +1,16 @@
+
+Democrat sentiment classifier (LinearSVC)
+Accuracy: 0.9730
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.98      0.98      0.98     50722
+    positive       0.97      0.96      0.96     32001
+
+    accuracy                           0.97     82723
+   macro avg       0.97      0.97      0.97     82723
+weighted avg       0.97      0.97      0.97     82723
+
+Confusion Matrix:
+[[49761   961]
+ [ 1269 30732]]

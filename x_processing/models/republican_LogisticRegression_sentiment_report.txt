@@ -1,0 +1,16 @@
+
+Republican sentiment classifier (LogisticRegression)
+Accuracy: 0.9736
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.97      0.97      0.97     38469
+    positive       0.98      0.98      0.98     51685
+
+    accuracy                           0.97     90154
+   macro avg       0.97      0.97      0.97     90154
+weighted avg       0.97      0.97      0.97     90154
+
+Confusion Matrix:
+[[37310  1159]
+ [ 1221 50464]]

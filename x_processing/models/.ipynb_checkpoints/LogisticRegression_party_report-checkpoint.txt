@@ -1,0 +1,16 @@
+
+Party classifier (LogisticRegression)
+Accuracy: 0.9051
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.90      0.91      0.90     82991
+  republican       0.91      0.90      0.91     89885
+
+    accuracy                           0.91    172876
+   macro avg       0.90      0.91      0.90    172876
+weighted avg       0.91      0.91      0.91    172876
+
+Confusion Matrix:
+[[75362  7629]
+ [ 8785 81100]]

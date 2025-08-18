@@ -1,0 +1,16 @@
+
+Party classifier (MultinomialNB)
+Accuracy: 0.8180
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.80      0.83      0.81     82991
+  republican       0.84      0.81      0.82     89885
+
+    accuracy                           0.82    172876
+   macro avg       0.82      0.82      0.82    172876
+weighted avg       0.82      0.82      0.82    172876
+
+Confusion Matrix:
+[[68811 14180]
+ [17285 72600]]
