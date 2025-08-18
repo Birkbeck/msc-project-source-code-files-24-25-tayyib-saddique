@@ -3,3 +3,4 @@ x_processing/train_unlabelled.parquet
 x_processing/train_labelled.parquet
 
 x_processing/models/*.joblib
+x_processing/models/expriments/*.joblib
