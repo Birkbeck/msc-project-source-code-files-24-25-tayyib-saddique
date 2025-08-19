@@ -3,4 +3,8 @@ x_processing/*.parquet
 
 # adding in models
 x_processing/models/*.joblib
-x_processing/models/expriments/*.joblib
+x_processing/models/expriments/*.jobli
+
+# adding in cache 
+.ipynb_checkpoints
+__pycache__
