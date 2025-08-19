@@ -128,9 +128,9 @@ def main():
     total_start = time.time()
 
     # Load Data
-    if os.path.exists(labelled_PARQUET):
-        print(f"Loading labelled data from {labelled_PARQUET}")
-        labelled_df = pd.read_parquet(labelled_PARQUET)
+    if os.path.exists(labelled_parquet):
+        print(f"Loading labelled data from {labelled_parquet}")
+        labelled_df = pd.read_parquet(labelled_parquet)
     else:
         print("Preprocessing raw data...")
         INPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "x-24-us-election"))
