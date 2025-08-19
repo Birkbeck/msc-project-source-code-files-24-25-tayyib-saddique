@@ -168,6 +168,8 @@ def main():
         "LinearSVC": LinearSVC(max_iter=3000),
         "RandomForest": RandomForestClassifier(n_estimators=100, n_jobs=-1, verbose=1),
         "MultinomialNB": MultinomialNB()
+        "KNN": KNeighborsClassifier(n_neighbors=5)
+
     }
 
     # --- Train & evaluate Party classifiers ---
