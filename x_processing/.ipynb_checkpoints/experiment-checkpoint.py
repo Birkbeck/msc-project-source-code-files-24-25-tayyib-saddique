@@ -11,8 +11,6 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import FunctionTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -20,8 +18,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import FunctionTransformer
 import joblib
 
+# NLTK setup
 nltk.download('stopwords', quiet=True)
 nltk.download('punkt', quiet=True)
 nltk.download('wordnet', quiet=True)
@@ -30,17 +31,17 @@ lemmatizer = WordNetLemmatizer()
 stop_words = set(stopwords.words('english'))
 vader = SentimentIntensityAnalyzer()
 
+# Config
 CANDIDATE_KEYWORDS = {
     'democrat': ['#bidenharris2024', '#kamalaharris2024', '@joebiden', '@kamalaharris', 'democrats'],
     'republican': ['#maga', 'republican', '#trump2024', '@realdonaldtrump']
 }
 STRONG_SENTIMENT_THRESHOLD = 0.6
-
-MODEL_DIR = "x_processing/models/experiment"
+MODEL_DIR = "x_processing/models"
 labelled_parquet = "x_processing/train_labelled.parquet"
 unlabelled_parquet = "x_processing/train_unlabelled.parquet"
 
-# Preprocessing & Weak labeling
+# --- Preprocessing ---
 def preprocess(text):
     text = text.lower()
     text = emoji.demojize(text, delimiters=(" ", " "))
@@ -88,7 +89,6 @@ def load_preprocess_weak_label(file_path):
 
         labelled = df.dropna(subset=['party', 'sentiment'])
         unlabelled = df[df['party'].isna() | df['sentiment'].isna()]
-
         if labelled.empty and unlabelled.empty:
             return None, None
 
@@ -105,7 +105,14 @@ def find_all_files_recursively(directory, extension=".csv.gz"):
                 files.append(os.path.join(root, filename))
     return files
 
-# Model Evaluation Helper
+# Features
+def extract_vader_scores(texts):
+    return [[vader.polarity_scores(t)['compound']] for t in texts]
+
+extract_text = ("text", TfidfVectorizer(max_features=20000, ngram_range=(1, 2)), "clean_text")
+extract_vader = ("vader", FunctionTransformer(extract_vader_scores, validate=False), "clean_text")
+
+# Evaluation
 def evaluate_model(pipeline, X_test, y_test, model_name, output_path=None):
     y_pred = pipeline.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
@@ -120,11 +127,10 @@ def main():
     os.makedirs(MODEL_DIR, exist_ok=True)
     total_start = time.time()
 
-    # Data Loading / Preprocessing
-    start = time.time()
-    if os.path.exists(labelled_parquet):
-        print(f"Loading labelled data from {labelled_parquet}")
-        labelled_df = pd.read_parquet(labelled_parquet)
+    # Load Data
+    if os.path.exists(labelled_PARQUET):
+        print(f"Loading labelled data from {labelled_PARQUET}")
+        labelled_df = pd.read_parquet(labelled_PARQUET)
     else:
         print("Preprocessing raw data...")
         INPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "x-24-us-election"))
@@ -157,124 +163,80 @@ def main():
         if unlabelled_dfs:
             unlabelled_df = pd.concat(unlabelled_dfs, ignore_index=True)
             unlabelled_df.to_parquet(unlabelled_parquet, index=False)
-            print(f"unlabelled data saved to {unlabelled_parquet}")
-    print(f"Data loading / preprocessing took {time.time() - start:.2f} seconds")
+            print(f"Unlabelled data saved to {unlabelled_parquet}")
 
-    # Model candidates
+    labelled_df.dropna(subset=['party', 'sentiment'], inplace=True)
+    labelled_df.reset_index(drop=True, inplace=True)
+
+
+    targets = {
+        "party": (labelled_df['clean_text'], labelled_df['party']),
+        "democrat_sentiment": (
+            labelled_df[labelled_df['party'] == 'democrat']['clean_text'],
+            labelled_df[labelled_df['party'] == 'democrat']['sentiment']
+        ),
+        "republican_sentiment": (
+            labelled_df[labelled_df['party'] == 'republican']['clean_text'],
+            labelled_df[labelled_df['party'] == 'republican']['sentiment']
+        )
+    }
+    
+    # Prepare models
     model_candidates = {
         "LogisticRegression": LogisticRegression(max_iter=300, n_jobs=-1),
         "LinearSVC": LinearSVC(max_iter=3000),
-        "RandomForest": RandomForestClassifier(n_estimators=100, n_jobs=-1, verbose=1),
+        "RandomForest": RandomForestClassifier(n_estimators=100, n_jobs=-1),
         "MultinomialNB": MultinomialNB(),
-        "KNN": KNeighborsClassifier(n_neighbors=5)
+        "KNN": KNeighborsClassifier(n_neighbors=5, n_jobs=-1)
     }
 
-    experiments = ['baseline', 'hybrid']
-    best_party_models = {}
-    best_sentiment_models = {}
-
-    # Train Party classifier
-    print("\nTraining party classifiers:")
-    X_party = labelled_df[['clean_text', 'sentiment_score']]
-    y_party = labelled_df['party']
-    X_train_p, X_test_p, y_train_p, y_test_p = train_test_split(X_party, y_party, test_size=0.2, random_state=42)
-
-    best_acc = 0
-    best_model_name = None
-    best_model_pipeline = None
-
-    for experiment in experiments:
-        for name, clf in model_candidates.items():
-            print(f"{name} for party classification ({experiment})")
-            start_time = time.time()
-
-            # Feature setup
-            if experiment == "baseline":
-                features = ColumnTransformer([('text', TfidfVectorizer(max_features=20000, ngram_range=(1, 2)), 'clean_text')], remainder="drop")
-            else:
-                features = ColumnTransformer([
-                    ('text', TfidfVectorizer(max_features=20000, ngram_range=(1, 2)), 'clean_text'),
-                    ('vader', FunctionTransformer(lambda X: X['sentiment_score'].values.reshape(-1,1), validate=False), 'sentiment_score')
-                ], remainder="drop")
-
-            pipeline = Pipeline([
-                ('features', features),
-                ('clf', clf)
-            ])
-            pipeline.fit(X_train_p, y_train_p)
-
-            report_path = os.path.join(MODEL_DIR, f"{experiment}_{name}_party_report.txt")
-            acc = evaluate_model(pipeline, X_test_p, y_test_p, f"{experiment.upper()} Party classifier ({name})", output_path=report_path)
-
-            elapsed = time.time() - start_time
-            print(f"Training + evaluation time for {name} (party, {experiment}): {elapsed:.2f} seconds")
-
-            model_path = os.path.join(MODEL_DIR, f"{experiment}_{name}_party_classifier.joblib")
-            joblib.dump(pipeline, model_path)
-            print(f"Saved {experiment} party classifier: {model_path}")
-
-            if acc > best_acc:
-                best_acc = acc
-                best_model_name = f"{experiment}_{name}"
-                best_model_pipeline = pipeline
-
-    best_party_models['party'] = (best_model_name, best_model_pipeline)
-    print(f"\nBest party classifier: {best_model_name} (accuracy={best_acc:.4f})\n")
-
-    # Train Sentiment classifiers per party
-    for party in ['democrat', 'republican']:
-        print(f"\nTraining sentiment classifiers for {party}:")
-        party_data = labelled_df[labelled_df['party'] == party]
-        if len(party_data) < 20:
-            print(f"Skipping {party}, not enough data ({len(party_data)})")
+    # Train & Evaluate
+    for target, (X, y) in targets.items():
+        if X.empty:
+            print(f"Skipping {target}, no data")
             continue
 
-        X_sent = party_data[['clean_text', 'sentiment_score']]
-        y_sent = party_data['sentiment']
-        X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X_sent, y_sent, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        best_acc = 0
-        best_model_name = None
-        best_model_pipeline = None
+        for experiment in ["baseline", "hybrid"]:
+            print(f"\nTraining {target} ({experiment})")
+            best_acc = 0
+            best_pipeline = None
+            best_name = None
 
-        for experiment in experiments:
             for name, clf in model_candidates.items():
-                print(f"{name} for {party} sentiment classification ({experiment})")
+                print(f"{name} for {target} classification")
                 start_time = time.time()
 
                 if experiment == "baseline":
-                    features = ColumnTransformer([('text', TfidfVectorizer(max_features=20000, ngram_range=(1, 2)), 'clean_text')], remainder="drop")
-                else:
-                    features = ColumnTransformer([
-                        ('text', TfidfVectorizer(max_features=20000, ngram_range=(1, 2)), 'clean_text'),
-                        ('vader', FunctionTransformer(lambda X: X['sentiment_score'].values.reshape(-1,1), validate=False), 'sentiment_score')
-                    ], remainder="drop")
+                    features = ColumnTransformer([extract_text], remainder="drop")
+                else:  # hybrid
+                    features = ColumnTransformer([extract_text, extract_vader], remainder="drop")
 
                 pipeline = Pipeline([
                     ('features', features),
                     ('clf', clf)
                 ])
-                pipeline.fit(X_train_s, y_train_s)
+                pipeline.fit(X_train, y_train)
 
-                report_path = os.path.join(MODEL_DIR, f"{experiment}_{name}_{party}_sentiment_report.txt")
-                acc = evaluate_model(pipeline, X_test_s, y_test_s, f"{experiment.upper()} {party} Sentiment classifier ({name})", output_path=report_path)
+                report_path = os.path.join(MODEL_DIR, f"{experiment}_{name}_{target}_report.txt")
+                acc = evaluate_model(pipeline, X_test, y_test, f"{experiment} {target} classifier ({name})", output_path=report_path)
 
                 elapsed = time.time() - start_time
-                print(f"Training + evaluation time for {name} ({party}, {experiment}): {elapsed:.2f} seconds")
-
-                model_path = os.path.join(MODEL_DIR, f"{experiment}_{name}_{party}_sentiment_classifier.joblib")
-                joblib.dump(pipeline, model_path)
-                print(f"Saved {experiment} {party} sentiment classifier: {model_path}")
+                print(f"Training + evaluation time for {name} ({target}, {experiment}): {elapsed:.2f} seconds")
 
                 if acc > best_acc:
                     best_acc = acc
-                    best_model_name = f"{experiment}_{name}"
-                    best_model_pipeline = pipeline
+                    best_pipeline = pipeline
+                    best_name = name
 
-        best_sentiment_models[party] = (best_model_name, best_model_pipeline)
-        print(f"\nBest sentiment classifier for {party}: {best_model_name} (accuracy={best_acc:.4f})\n")
+            # Save only best model for this target & experiment
+            if best_pipeline:
+                model_path = os.path.join(MODEL_DIR, f"{experiment}_{best_name}_{target}_classifier.joblib")
+                joblib.dump(best_pipeline, model_path)
+                print(f"Best {target} classifier ({experiment}): {best_name} saved to {model_path}")
 
-    print(f"Total runtime: {time.time() - total_start:.2f} seconds")
+    print(f"\nTotal runtime: {time.time() - total_start:.2f} seconds")
 
 if __name__ == "__main__":
     main()

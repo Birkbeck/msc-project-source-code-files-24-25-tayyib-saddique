@@ -167,12 +167,12 @@ def main():
         "LogisticRegression": LogisticRegression(max_iter=300, n_jobs=-1),
         "LinearSVC": LinearSVC(max_iter=3000),
         "RandomForest": RandomForestClassifier(n_estimators=100, n_jobs=-1, verbose=1),
-        "MultinomialNB": MultinomialNB()
+        "MultinomialNB": MultinomialNB(),
         "KNN": KNeighborsClassifier(n_neighbors=5)
 
     }
 
-    # --- Train & evaluate Party classifiers ---
+    # Train & evaluate Party classifiers
     print("\nTraining party classifiers:")
     X_party = labelled_df['clean_text']
     y_party = labelled_df['party']
@@ -207,7 +207,7 @@ def main():
     joblib.dump(best_party_model, party_model_path)
     print(f"\nBest party classifier: {best_party_name} saved to {party_model_path}")
 
-    #Train & evaluate Sentiment classifiers per party
+    # Train & evaluate sentiment classifiers per party
     sentiment_pipelines = {}
     for party in ['democrat', 'republican']:
         print(f"\nTraining sentiment classifiers for {party}:")
