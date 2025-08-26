@@ -1,16 +1,9 @@
 Task: party
 Model: LightGBM
-Validation Accuracy: 0.9079
+Average CV Accuracy: 0.9092
 
 Best Parameters:
 num_leaves: 63
 n_estimators: 200
-max_depth: -1
+max_depth: 30
 learning_rate: 0.05
-
-Classification Report:
-democrat: {'precision': 0.8844069005996018, 'recall': 0.9289677598733121, 'f1-score': 0.9061398233636374, 'support': 82723}
-republican: {'precision': 0.931662499273129, 'recall': 0.8885893980233602, 'f1-score': 0.9096163235644777, 'support': 90153}
-accuracy: 0.9079108725329138
-macro avg: {'precision': 0.9080346999363654, 'recall': 0.9087785789483362, 'f1-score': 0.9078780734640576, 'support': 172876}
-weighted avg: {'precision': 0.9090501939845395, 'recall': 0.9079108725329138, 'f1-score': 0.9079527813370192, 'support': 172876}

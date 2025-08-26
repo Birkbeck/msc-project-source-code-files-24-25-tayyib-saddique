@@ -1,13 +1,6 @@
 Task: democrat_sentiment
 Model: LogisticRegression
-Validation Accuracy: 0.9861
+Average CV Accuracy: 0.9858
 
 Best Parameters:
-C: 13.826232179369853
-
-Classification Report:
-negative: {'precision': 0.9881390271248451, 'recall': 0.9892871209137456, 'f1-score': 0.9887127407276199, 'support': 50780}
-positive: {'precision': 0.9829381507966378, 'recall': 0.9811226246752027, 'f1-score': 0.9820295486236233, 'support': 31943}
-accuracy: 0.9861344487022956
-macro avg: {'precision': 0.9855385889607415, 'recall': 0.9852048727944742, 'f1-score': 0.9853711446756217, 'support': 82723}
-weighted avg: {'precision': 0.9861307393142975, 'recall': 0.9861344487022956, 'f1-score': 0.9861320653969627, 'support': 82723}
+C: 21.368329072358737

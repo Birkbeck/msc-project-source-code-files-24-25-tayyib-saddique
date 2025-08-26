@@ -9,7 +9,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -120,34 +120,72 @@ def evaluate_model(pipeline, X_test, y_test, model_name, output_path=None):
     return acc
 
 
-def train_and_save_models(X, y, model_candidates, task_name, tfidf_max_features=20000, ngram_range=(1, 2)):
+def train_and_save_models(X, y, model_candidates, 
+                          task_name, tfidf_max_features=20000, 
+                          ngram_range=(1, 2), n_splits=5):
     results = []
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    # Hold-out split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
+    )
 
     for name, clf in model_candidates.items():
-        print(f"\nTraining {name} for {task_name}...")
+        print(f"\nTraining {name} for {task_name} with {n_splits}-fold CV...")
         pipeline = Pipeline([
             ('tfidf', TfidfVectorizer(max_features=tfidf_max_features, ngram_range=ngram_range)),
             ('clf', clf)
         ])
+
+        # Cross-validation
+        cv_results = cross_validate(
+            pipeline, X_train, y_train, cv=skf,
+            scoring=['accuracy', 'precision_macro', 'recall_macro', 'f1_macro'],
+            n_jobs=-1, return_train_score=False
+        )
+
+        cv_summary = (
+            f"{name} CV Results for {task_name}:\n"
+            f"Accuracy:  {cv_results['test_accuracy'].mean():.4f} +/- {cv_results['test_accuracy'].std():.4f}\n"
+            f"Precision: {cv_results['test_precision_macro'].mean():.4f} +/- {cv_results['test_precision_macro'].std():.4f}\n"
+            f"Recall:    {cv_results['test_recall_macro'].mean():.4f} +/- {cv_results['test_recall_macro'].std():.4f}\n"
+            f"F1:        {cv_results['test_f1_macro'].mean():.4f} +/- {cv_results['test_f1_macro'].std():.4f}\n"
+        )
+        print(cv_summary)
+
+        # Fit final model
         start_time = time.time()
         pipeline.fit(X_train, y_train)
         elapsed = time.time() - start_time
+        print(f"Final training time for {name} ({task_name}): {elapsed:.2f} seconds")
+        
+        # Hold-out evaluation
+        eval_output_path = os.path.join(MODEL_DIR, f"{name}_{task_name}_evaluation.txt")
+        test_acc = evaluate_model(pipeline, X_test, y_test, f"{name} ({task_name})", output_path=eval_output_path)
 
-        report_path = os.path.join(MODEL_DIR, f"{task_name}_{name}___report.txt")
-        acc = evaluate_model(pipeline, X_test, y_test, f"{task_name} ({name})", output_path=report_path)
+        # Save CV results 
+        cv_output_path = os.path.join(MODEL_DIR, f"{name}_{task_name}_cv_results.txt")
+        with open(cv_output_path, "w") as f:
+            f.write(cv_summary)
 
-        print(f"Training + evaluation time for {name} ({task_name}): {elapsed:.2f} seconds")
-        results.append((name, pipeline, acc))
-
-    # Save models
-    for name, model, acc in results:
+        # Save model
         path = os.path.join(MODEL_DIR, f"{name}_{task_name}_classifier.joblib")
-        joblib.dump(model, path)
-        print(f"Saved {name} for {task_name} with accuracy {acc:.4f} -> {path}")
+        joblib.dump(pipeline, path)
+        print(f"Saved {name} for {task_name} -> {path}")
 
+        # Store results
+        results.append({
+            "model": name,
+            "pipeline": pipeline,
+            "cv_results": cv_results,
+            "test_accuracy": test_acc,
+            "model_path": path,
+            "cv_report_path": cv_output_path,
+            "eval_report_path": eval_output_path
+        })
+        
     return results
-
 
 # Main pipeline
 def main():
@@ -221,14 +259,15 @@ def main():
     dem_sentiment_models = {
         "LogisticRegression": LogisticRegression(
             max_iter=300,
-            C=13.826,
+            C=21.368329072358737,
             n_jobs=-1,
             verbose=1
         ),
-        "LinearSVC": LinearSVC(max_iter=3000,
-                               C=0.6338,
-                               loss='squared_hinge',
-                              )
+        "LinearSVC": LinearSVC(
+            max_iter=3000,
+           C=0.6338653441536255,
+           loss='squared_hinge',
+        )
     }
 
     print("\nTraining sentiment classifiers for Democrats (LogReg + LinearSVC):")
@@ -244,13 +283,15 @@ def main():
     rep_sentiment_models = {
         "LogisticRegression": LogisticRegression(
             max_iter=300,
-            C=13.826,
+            C=13.826232179369853,
             n_jobs=-1,
             verbose=1
         ),
-        "LinearSVC": LinearSVC(max_iter=3000,
-                              C=0.367,
-                              loss='squared_hinge')
+        "LinearSVC": LinearSVC(
+            max_iter=3000,
+            C=0.6338653441536255,
+            loss='squared_hinge'
+        )
     }
 
     print("\nTraining sentiment classifiers for Republicans (LogReg + LinearSVC):")

@@ -1,0 +1,5 @@
+LightGBM CV Results for party:
+Accuracy:  0.9100 +/- 0.0005
+Precision: 0.9101 +/- 0.0005
+Recall:    0.9109 +/- 0.0005
+F1:        0.9100 +/- 0.0005

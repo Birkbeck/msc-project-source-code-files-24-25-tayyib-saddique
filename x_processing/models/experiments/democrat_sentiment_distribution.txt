@@ -1,1 +1,1 @@
-LinearSVC: 0.9863 -> x_processing/models/experiments/fine_tuned/LinearSVC_democrat_sentiment_best_model.joblib
+LinearSVC: 0.9862 -> x_processing/models/experiments/fine_tuned/LinearSVC_democrat_sentiment_best_model.joblib

@@ -1,0 +1,5 @@
+LinearSVC CV Results for republican_sentiment:
+Accuracy:  0.9873 +/- 0.0003
+Precision: 0.9871 +/- 0.0003
+Recall:    0.9871 +/- 0.0002
+F1:        0.9871 +/- 0.0003

@@ -1,14 +1,7 @@
 Task: republican_sentiment
 Model: LinearSVC
-Validation Accuracy: 0.9879
+Average CV Accuracy: 0.9875
 
 Best Parameters:
-C: 0.366642183206372
+C: 0.6338653441536255
 loss: squared_hinge
-
-Classification Report:
-negative: {'precision': 0.9861268695203713, 'recall': 0.9857455857713623, 'f1-score': 0.9859361907831132, 'support': 38795}
-positive: {'precision': 0.9892358002102231, 'recall': 0.9895247181604003, 'f1-score': 0.9893802380929204, 'support': 51359}
-accuracy: 0.9878984848148723
-macro avg: {'precision': 0.9876813348652972, 'recall': 0.9876351519658813, 'f1-score': 0.9876582144380168, 'support': 90154}
-weighted avg: {'precision': 0.9878979675448637, 'recall': 0.9878984848148723, 'f1-score': 0.9878981983011865, 'support': 90154}

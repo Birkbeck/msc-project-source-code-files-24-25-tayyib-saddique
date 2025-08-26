@@ -1,0 +1,16 @@
+
+LightGBM (party)
+Accuracy: 0.9083
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.88      0.93      0.91     82723
+  republican       0.93      0.89      0.91     90153
+
+    accuracy                           0.91    172876
+   macro avg       0.91      0.91      0.91    172876
+weighted avg       0.91      0.91      0.91    172876
+
+Confusion Matrix:
+[[76983  5740]
+ [10105 80048]]
