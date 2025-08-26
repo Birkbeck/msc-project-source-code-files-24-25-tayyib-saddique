@@ -1,0 +1,14 @@
+Task: democrat_sentiment
+Model: LinearSVC
+Validation Accuracy: 0.9863
+
+Best Parameters:
+C: 0.6338653441536255
+loss: squared_hinge
+
+Classification Report:
+negative: {'precision': 0.9883720930232558, 'recall': 0.9892674281213076, 'f1-score': 0.988819557900124, 'support': 50780}
+positive: {'precision': 0.9829137536445434, 'recall': 0.9814982938358952, 'f1-score': 0.9822055137844611, 'support': 31943}
+accuracy: 0.9862674226031455
+macro avg: {'precision': 0.9856429233338996, 'recall': 0.9853828609786014, 'f1-score': 0.9855125358422925, 'support': 82723}
+weighted avg: {'precision': 0.9862643873697591, 'recall': 0.9862674226031455, 'f1-score': 0.9862655836585392, 'support': 82723}

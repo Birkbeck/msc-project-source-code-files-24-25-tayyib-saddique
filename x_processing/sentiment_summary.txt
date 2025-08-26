@@ -1,6 +1,6 @@
 Democrat:
-  Positive sentiment: 16991579/25856932 (65.71%)
+  Positive sentiment: 11551842/26500640 (43.59%)
 
 Republican:
-  Positive sentiment: 7026385/10172284 (69.07%)
+  Positive sentiment: 4985655/9528576 (52.32%)
 

@@ -1,0 +1,16 @@
+
+democrat_sentiment (MultinomialNB, tfidf)
+Accuracy: 0.9461
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.93      0.98      0.96     50780
+    positive       0.97      0.89      0.93     31943
+
+    accuracy                           0.95     82723
+   macro avg       0.95      0.94      0.94     82723
+weighted avg       0.95      0.95      0.95     82723
+
+Confusion Matrix:
+[[49790   990]
+ [ 3465 28478]]

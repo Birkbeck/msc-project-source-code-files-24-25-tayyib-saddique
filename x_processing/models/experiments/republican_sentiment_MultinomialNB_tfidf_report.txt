@@ -1,0 +1,16 @@
+
+republican_sentiment (MultinomialNB, tfidf)
+Accuracy: 0.9508
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.93      0.96      0.94     38795
+    positive       0.97      0.94      0.96     51359
+
+    accuracy                           0.95     90154
+   macro avg       0.95      0.95      0.95     90154
+weighted avg       0.95      0.95      0.95     90154
+
+Confusion Matrix:
+[[37221  1574]
+ [ 2866 48493]]

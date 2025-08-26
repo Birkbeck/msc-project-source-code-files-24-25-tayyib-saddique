@@ -1,0 +1,13 @@
+Task: republican_sentiment
+Best Model: LinearSVC
+Validation Accuracy: 0.9824
+
+Best Parameters:
+clf__C: 0.314891164795686
+
+Classification Report:
+negative: {'precision': 0.980228686472395, 'recall': 0.9789148086093569, 'f1-score': 0.9795713069720653, 'support': 38795}
+positive: {'precision': 0.984089008188909, 'recall': 0.9850853793882279, 'f1-score': 0.9845869417145081, 'support': 51359}
+accuracy: 0.9824300641125185
+macro avg: {'precision': 0.982158847330652, 'recall': 0.9820000939987924, 'f1-score': 0.9820791243432867, 'support': 90154}
+weighted avg: {'precision': 0.9824278375143726, 'recall': 0.9824300641125185, 'f1-score': 0.9824286176264692, 'support': 90154}

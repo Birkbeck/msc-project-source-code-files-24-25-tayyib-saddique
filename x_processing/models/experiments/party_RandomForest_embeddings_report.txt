@@ -1,0 +1,16 @@
+
+party (RandomForest, embeddings)
+Accuracy: 0.8037
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.80      0.78      0.79     82723
+  republican       0.80      0.82      0.81     90153
+
+    accuracy                           0.80    172876
+   macro avg       0.80      0.80      0.80    172876
+weighted avg       0.80      0.80      0.80    172876
+
+Confusion Matrix:
+[[64666 18057]
+ [15878 74275]]

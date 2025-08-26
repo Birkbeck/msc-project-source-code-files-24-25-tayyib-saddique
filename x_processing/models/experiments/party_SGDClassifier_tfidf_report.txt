@@ -1,0 +1,16 @@
+
+party (SGDClassifier, tfidf)
+Accuracy: 0.8908
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.87      0.90      0.89     82723
+  republican       0.91      0.88      0.89     90153
+
+    accuracy                           0.89    172876
+   macro avg       0.89      0.89      0.89    172876
+weighted avg       0.89      0.89      0.89    172876
+
+Confusion Matrix:
+[[74854  7869]
+ [11004 79149]]

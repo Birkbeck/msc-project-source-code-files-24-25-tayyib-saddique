@@ -1,0 +1,16 @@
+
+democrat_sentiment (SGDClassifier, embeddings)
+Accuracy: 0.9258
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.93      0.95      0.94     50780
+    positive       0.92      0.89      0.90     31943
+
+    accuracy                           0.93     82723
+   macro avg       0.92      0.92      0.92     82723
+weighted avg       0.93      0.93      0.93     82723
+
+Confusion Matrix:
+[[48220  2560]
+ [ 3579 28364]]

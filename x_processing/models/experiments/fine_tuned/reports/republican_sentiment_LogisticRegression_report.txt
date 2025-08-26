@@ -1,0 +1,13 @@
+Task: republican_sentiment
+Model: LogisticRegression
+Validation Accuracy: 0.9876
+
+Best Parameters:
+C: 13.826232179369853
+
+Classification Report:
+negative: {'precision': 0.9859431018028939, 'recall': 0.9853331614898827, 'f1-score': 0.9856380372843773, 'support': 38795}
+positive: {'precision': 0.9889262985812428, 'recall': 0.989388422671781, 'f1-score': 0.9891573066516128, 'support': 51359}
+accuracy: 0.9876433657963041
+macro avg: {'precision': 0.9874347001920684, 'recall': 0.9873607920808318, 'f1-score': 0.9873976719679951, 'support': 90154}
+weighted avg: {'precision': 0.9876425716360596, 'recall': 0.9876433657963041, 'f1-score': 0.9876428973619319, 'support': 90154}

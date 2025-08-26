@@ -1,0 +1,16 @@
+
+party (SGDClassifier, embeddings)
+Accuracy: 0.8070
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.80      0.79      0.80     82723
+  republican       0.81      0.82      0.82     90153
+
+    accuracy                           0.81    172876
+   macro avg       0.81      0.81      0.81    172876
+weighted avg       0.81      0.81      0.81    172876
+
+Confusion Matrix:
+[[65524 17199]
+ [16159 73994]]

@@ -1,0 +1,16 @@
+
+party (LogisticRegression, tfidf)
+Accuracy: 0.9038
+Classification Report:
+              precision    recall  f1-score   support
+
+    democrat       0.89      0.91      0.90     82723
+  republican       0.91      0.90      0.91     90153
+
+    accuracy                           0.90    172876
+   macro avg       0.90      0.90      0.90    172876
+weighted avg       0.90      0.90      0.90    172876
+
+Confusion Matrix:
+[[75180  7543]
+ [ 9095 81058]]

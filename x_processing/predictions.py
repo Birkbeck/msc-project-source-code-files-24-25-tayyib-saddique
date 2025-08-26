@@ -10,19 +10,21 @@ OUTPUT_PARQUET = "x_processing/predictions.parquet"
 CHUNK_SIZE = 500_000 
 
 def load_model(classifier, party=None, directory=MODEL_DIR):
-    """Load best saved model for party or sentiment classification"""
-    candidates = []
-    for f in os.listdir(directory):
-        if not f.endswith(".joblib"):
-            continue
-        f_lower = f.lower()
-        if classifier == "party" and "party_classifier" in f_lower:
-            candidates.append(f)
-        elif classifier == "sentiment" and party and party.lower() in f_lower and "sentiment_classifier" in f_lower:
-            candidates.append(f)
-    if not candidates:
-        raise FileNotFoundError(f"No model found for classifier='{classifier}' party='{party}'")
-    model_path = os.path.join(directory, candidates[0])
+    """Load hard-coded best model for party or sentiment classification"""
+    
+    if classifier == "party":
+        filename = "LightGBM_party_classifier.joblib"
+    elif classifier == "sentiment":
+        if not party:
+            raise ValueError("Party must be specified for sentiment classifier")
+        filename = f"LinearSVC_{party.lower()}_sentiment_classifier.joblib"
+    else:
+        raise ValueError(f"Unknown classifier type: {classifier}")
+
+    model_path = os.path.join(directory, filename)
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Expected model file not found: {model_path}")
+    
     print(f"Loading {classifier} model from: {model_path}")
     return joblib.load(model_path)
 
@@ -95,7 +97,7 @@ def main():
             ratio = positive / total
             sentiment_summary[party] = (positive, total, ratio)
 
-    summary_file_path = "x_processing/sentiment_summary.txt"
+    summary_file = "x_processing/sentiment_summary.txt"
     with open(summary_file, "w") as f:
         for party, (pos, total, ratio) in sentiment_summary.items():
             f.write(f"{party.capitalize()}:\n")

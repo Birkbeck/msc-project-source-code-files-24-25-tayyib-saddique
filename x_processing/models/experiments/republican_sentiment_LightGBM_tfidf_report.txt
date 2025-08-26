@@ -1,0 +1,16 @@
+
+republican_sentiment (LightGBM, tfidf)
+Accuracy: 0.9426
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.93      0.93      0.93     38795
+    positive       0.95      0.95      0.95     51359
+
+    accuracy                           0.94     90154
+   macro avg       0.94      0.94      0.94     90154
+weighted avg       0.94      0.94      0.94     90154
+
+Confusion Matrix:
+[[36209  2586]
+ [ 2592 48767]]

@@ -1,0 +1,16 @@
+
+republican_sentiment (SGDClassifier, embeddings)
+Accuracy: 0.9301
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.92      0.92      0.92     38795
+    positive       0.94      0.94      0.94     51359
+
+    accuracy                           0.93     90154
+   macro avg       0.93      0.93      0.93     90154
+weighted avg       0.93      0.93      0.93     90154
+
+Confusion Matrix:
+[[35685  3110]
+ [ 3190 48169]]

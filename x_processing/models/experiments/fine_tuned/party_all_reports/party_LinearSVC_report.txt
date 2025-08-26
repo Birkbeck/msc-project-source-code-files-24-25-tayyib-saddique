@@ -1,0 +1,22 @@
+Task: party
+Model: LinearSVC
+Validation Accuracy: 0.8902
+
+Best Parameters:
+clf__C: 0.314891164795686
+clf__dual: True
+clf__loss: hinge
+clf__penalty: l2
+tfidf__max_df: 0.8
+tfidf__max_features: 1000
+tfidf__min_df: 5
+tfidf__ngram_range: (1, 2)
+tfidf__sublinear_tf: True
+tfidf__use_idf: True
+
+Classification Report:
+democrat: {'precision': 0.8655312804633293, 'recall': 0.9123218451942023, 'f1-score': 0.8883108322838075, 'support': 82723}
+republican: {'precision': 0.9153487937815852, 'recall': 0.8699433185806351, 'f1-score': 0.8920686556638648, 'support': 90153}
+accuracy: 0.8902218931488466
+macro avg: {'precision': 0.8904400371224572, 'recall': 0.8911325818874187, 'f1-score': 0.8901897439738362, 'support': 172876}
+weighted avg: {'precision': 0.8915105851567554, 'recall': 0.8902218931488466, 'f1-score': 0.8902704973106608, 'support': 172876}

@@ -1,0 +1,26 @@
+Task: party
+Model: LightGBM
+Validation Accuracy: 0.9018
+
+Best Parameters:
+tfidf__use_idf: True
+tfidf__sublinear_tf: False
+tfidf__ngram_range: (1, 3)
+tfidf__min_df: 2
+tfidf__max_features: 10000
+tfidf__max_df: 0.9
+clf__subsample: 0.7
+clf__reg_lambda: 0.0
+clf__reg_alpha: 0.01
+clf__num_leaves: 100
+clf__n_estimators: 200
+clf__max_depth: 10
+clf__learning_rate: 0.05
+clf__colsample_bytree: 1.0
+
+Classification Report:
+democrat: {'precision': 0.8724214103653356, 'recall': 0.9309744569225004, 'f1-score': 0.9007473771623061, 'support': 82723}
+republican: {'precision': 0.9325067079585347, 'recall': 0.8750790323117367, 'f1-score': 0.9028806207583232, 'support': 90153}
+accuracy: 0.901825585969134
+macro avg: {'precision': 0.9024640591619352, 'recall': 0.9030267446171185, 'f1-score': 0.9018139989603147, 'support': 172876}
+weighted avg: {'precision': 0.9037552556296851, 'recall': 0.901825585969134, 'f1-score': 0.9018598410665595, 'support': 172876}

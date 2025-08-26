@@ -1,0 +1,16 @@
+
+democrat_sentiment (RandomForest, embeddings)
+Accuracy: 0.8676
+Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.83      0.98      0.90     50780
+    positive       0.95      0.69      0.80     31943
+
+    accuracy                           0.87     82723
+   macro avg       0.89      0.84      0.85     82723
+weighted avg       0.88      0.87      0.86     82723
+
+Confusion Matrix:
+[[49646  1134]
+ [ 9820 22123]]
