@@ -3,7 +3,8 @@ x_processing/*.parquet
 
 # adding in models
 x_processing/models/*.joblib
-x_processing/models/expriments/*.jobli
+x_processing/models/experiments/*.joblib
+x_processing/models/experiments/fine_tuned/*.joblib
 
 # adding in cache 
 .ipynb_checkpoints/
