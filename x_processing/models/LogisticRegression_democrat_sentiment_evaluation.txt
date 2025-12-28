@@ -1,16 +1,18 @@
 
 LogisticRegression (democrat_sentiment)
-Accuracy: 0.9858
+============================================================
+Accuracy: 0.9859
+
 Classification Report:
               precision    recall  f1-score   support
 
     negative       0.99      0.99      0.99     50780
-    positive       0.98      0.98      0.98     31943
+    positive       0.98      0.98      0.98     31942
 
-    accuracy                           0.99     82723
-   macro avg       0.99      0.98      0.98     82723
-weighted avg       0.99      0.99      0.99     82723
+    accuracy                           0.99     82722
+   macro avg       0.99      0.98      0.99     82722
+weighted avg       0.99      0.99      0.99     82722
 
 Confusion Matrix:
-[[50221   559]
- [  618 31325]]
+[[50235   545]
+ [  618 31324]]

@@ -1,166 +1,120 @@
 import os
-import time
 import warnings
 from datetime import datetime
-
 import pandas as pd
-import matplotlib.pyplot as plt
 import joblib
 
 warnings.filterwarnings("ignore")
 
-MODEL_DIR = "x_processing/models"
-OUTPUT_DIR = "x_processing/outputs"
-FIGURE_DIR = "x_processing/figures"
-PREDICTIONS_PARQUET = "x_processing/predictions_with_timestamps.parquet"
+PATHS = {
+    "models": "x_processing/models",
+    "output": "x_processing/outputs",
+    "input": "x_processing/train_unlabelled.parquet",
+    "predictions": "x_processing/predictions_with_timestamps.parquet"
+}
 
-BIDEN_START = datetime(2024, 5, 1)
-BIDEN_END = datetime(2024, 7, 21)
-HARRIS_START = datetime(2024, 7, 22)
-ELECTION_DAY = datetime(2024, 11, 5)
+# Key campaign events
+EVENTS = {
+    "Biden Exit": datetime(2024, 7, 21),
+    "Harris Entry": datetime(2024, 7, 22),
+    "Trump Assassination": datetime(2024, 10, 15),  # Example date
+    "Election Day": datetime(2024, 11, 5)
+}
 
 def assign_campaign_phase(ts):
-    if pd.isna(ts):
+    """Segment tweets into structural campaign periods based on dates."""
+    if pd.isna(ts): 
         return "Unknown"
-    if BIDEN_START <= ts <= BIDEN_END:
+    
+    if datetime(2024, 5, 1) <= ts <= EVENTS["Biden Exit"]:
         return "Biden Campaign"
-    elif HARRIS_START <= ts < ELECTION_DAY:
+    elif EVENTS["Harris Entry"] <= ts < EVENTS["Election Day"]:
         return "Harris Campaign"
-    elif ts >= ELECTION_DAY:
+    elif ts >= EVENTS["Election Day"]:
         return "Post-Election"
-    else:
-        return "Other"
+    return "Other"
 
-def compute_sentiment_gap(df, freq='W'):
-    df = df.dropna(subset=['party', 'sentiment', 'timestamp']).copy()
-    df['week'] = df['timestamp'].dt.to_period(freq)
-    
-    weekly = df.groupby(['week', 'party']).agg(
-        total_tweets=('sentiment', 'count'),
-        positive_tweets=('sentiment', lambda x: (x=='positive').sum())
-    ).reset_index()
-    
-    weekly['positive_ratio'] = weekly['positive_tweets'] / weekly['total_tweets']
-    
-    pivot = weekly.pivot(index='week', columns='party', values='positive_ratio').fillna(0)
-    pivot['sentiment_gap'] = pivot.get('republican', 0) - pivot.get('democrat', 0)
-    return pivot.reset_index()
+def assign_event(ts):
+    """Flag tweets corresponding to key campaign events."""
+    if pd.isna(ts):
+        return "No Event"
+    for event_name, event_date in EVENTS.items():
+        # Mark tweets on the exact day of the event
+        if ts.date() == event_date.date():
+            return event_name
+    return "No Event"
 
-def plot_sentiment_gap(weekly_gap, output_path):
-    plt.figure(figsize=(12, 5))
-    plt.plot(weekly_gap['week'].astype(str), weekly_gap.get('democrat', 0), label='Democrat', color='#0015BC')
-    plt.plot(weekly_gap['week'].astype(str), weekly_gap.get('republican', 0), label='Republican', color='#E81B23')
-    plt.plot(weekly_gap['week'].astype(str), weekly_gap['sentiment_gap'], label='Rep-Dem Gap', color='green', linestyle='--')
-    plt.xticks(rotation=45)
-    plt.xlabel('Week')
-    plt.ylabel('Positive Sentiment Ratio')
-    plt.title('Weekly Positive Sentiment & Gap')
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-    print(f"Saved: {output_path}")
+def generate_predictions(df):
+    """Apply pre-trained classifiers to unlabelled data."""
+    print("Loading models and classifying tweets...")
+    p_model = joblib.load(os.path.join(PATHS["models"], "LightGBM_party_classifier.joblib"))
+    d_model = joblib.load(os.path.join(PATHS["models"], "LinearSVC_democrat_sentiment_classifier.joblib"))
+    r_model = joblib.load(os.path.join(PATHS["models"], "LinearSVC_republican_sentiment_classifier.joblib"))
+    
+    # Predict Party
+    df['party'] = p_model.predict(df['clean_text'])
+    
+    # Predict Sentiment based on Party
+    for party, model in [('democrat', d_model), ('republican', r_model)]:
+        mask = df['party'] == party
+        if mask.any():
+            df.loc[mask, 'sentiment'] = model.predict(df.loc[mask, 'clean_text'])
+    
+    df.to_parquet(PATHS["predictions"], index=False)
+    return df
 
-def compute_volume_trends(df, freq='W'):
-    df = df.dropna(subset=['party', 'timestamp']).copy()
-    df['week'] = df['timestamp'].dt.to_period(freq)
+def calculate_swings(df):
+    """Calculate sentiment swings across campaign phases."""
+    core_df = df[df['phase'].isin(["Biden Campaign", "Harris Campaign"])]
+    core_df = core_df.dropna(subset=['sentiment', 'party'])
     
-    weekly_volume = df.groupby(['week', 'party']).size().reset_index(name='tweet_count')
-    pivot = weekly_volume.pivot(index='week', columns='party', values='tweet_count').fillna(0)
-    return pivot.reset_index()
+    # % Positive sentiment by phase and party
+    metrics = core_df.groupby(['phase', 'party'])['sentiment'].apply(
+        lambda x: (x == 'positive').mean()
+    ).unstack()
+    
+    # Calculate swing from Biden -> Harris
+    if 'Harris Campaign' in metrics.index and 'Biden Campaign' in metrics.index:
+        swing = metrics.loc['Harris Campaign'] - metrics.loc['Biden Campaign']
+        swing.name = 'Sentiment Swing'
+        return pd.concat([metrics, swing.to_frame().T])
+    return metrics
 
-def plot_volume_trends(weekly_volume, output_path):
-    plt.figure(figsize=(12, 5))
-    plt.bar(weekly_volume['week'].astype(str), weekly_volume.get('democrat', 0)/1e6, label='Democrat', alpha=0.8, color='#0015BC')
-    plt.bar(weekly_volume['week'].astype(str), weekly_volume.get('republican', 0)/1e6, bottom=weekly_volume.get('democrat', 0)/1e6, label='Republican', alpha=0.8, color='#E81B23')
-    plt.xticks(rotation=45)
-    plt.ylabel('Tweet Volume (millions)')
-    plt.xlabel('Week')
-    plt.title('Weekly Tweet Volume by Party')
-    plt.legend()
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-    print(f"Saved: {output_path}")
-
-def generate_predictions(unlabelled_df):
-    print(f"\nGenerating predictions for {len(unlabelled_df):,} tweets...")
-    
-    # Load pre-trained models
-    party_model = joblib.load(os.path.join(MODEL_DIR, "LightGBM_party_classifier.joblib"))
-    dem_sent_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_democrat_sentiment_classifier.joblib"))
-    rep_sent_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_republican_sentiment_classifier.joblib"))
-    
-    # Party prediction
-    print("Classifying party affiliation...")
-    unlabelled_df['party'] = party_model.predict(unlabelled_df['clean_text'])
-    
-    # Sentiment prediction per party
-    print("Classifying sentiment for Democrats...")
-    dem_mask = unlabelled_df['party'] == 'democrat'
-    unlabelled_df.loc[dem_mask, 'sentiment'] = dem_sent_model.predict(unlabelled_df.loc[dem_mask, 'clean_text'])
-    
-    print("Classifying sentiment for Republicans...")
-    rep_mask = unlabelled_df['party'] == 'republican'
-    unlabelled_df.loc[rep_mask, 'sentiment'] = rep_sent_model.predict(unlabelled_df.loc[rep_mask, 'clean_text'])
-    
-    # Save
-    unlabelled_df.to_parquet(PREDICTIONS_PARQUET, index=False)
-    print(f"Predictions saved: {PREDICTIONS_PARQUET}")
-    return unlabelled_df
-
-def phase_based_sentiment(df):
-    df['phase'] = df['timestamp'].apply(assign_campaign_phase)
-    
-    results = []
-    for party in ['democrat', 'republican']:
-        for phase in ['Biden Campaign', 'Harris Campaign', 'Post-Election']:
-            subset = df[(df['party']==party) & (df['phase']==phase)]
-            if subset.empty:
-                continue
-            total = len(subset)
-            pos = (subset['sentiment']=='positive').sum()
-            neg = (subset['sentiment']=='negative').sum()
-            results.append({
-                'party': party,
-                'phase': phase,
-                'total_tweets': total,
-                'positive_ratio': pos / total,
-                'negative_ratio': neg / total
-            })
-    return pd.DataFrame(results)
+def event_sentiment_summary(df):
+    """Summarize sentiment for key campaign events."""
+    event_summary = df.groupby(['event', 'party'])['sentiment'].apply(
+        lambda x: (x == 'positive').mean()
+    ).unstack()
+    return event_summary
 
 def main():
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(FIGURE_DIR, exist_ok=True)
-    
-    # Load or generate predictions
-    if os.path.exists(PREDICTIONS_PARQUET):
-        print(f"\nLoading existing predictions: {PREDICTIONS_PARQUET}")
-        df = pd.read_parquet(PREDICTIONS_PARQUET)
+    os.makedirs(PATHS["output"], exist_ok=True)
+
+    # Load or Generate Predictions
+    if os.path.exists(PATHS["predictions"]):
+        print(f"Loading existing predictions from {PATHS['predictions']}")
+        df = pd.read_parquet(PATHS["predictions"])
     else:
-        # Assume unlabelled_df already exists with 'clean_text' and 'timestamp'
-        unlabelled_df = pd.read_parquet("x_processing/train_unlabelled.parquet")
-        df = generate_predictions(unlabelled_df)
-    
-    # Phase-based sentiment
-    phase_results = phase_based_sentiment(df)
-    phase_csv = os.path.join(OUTPUT_DIR, "phase_sentiment.csv")
-    phase_results.to_csv(phase_csv, index=False)
-    print(f"\nPhase sentiment saved: {phase_csv}")
-    
-    # Sentiment gap over time
-    weekly_gap = compute_sentiment_gap(df)
-    gap_fig = os.path.join(FIGURE_DIR, "weekly_sentiment_gap.png")
-    plot_sentiment_gap(weekly_gap, gap_fig)
-    
-    # Volume trends
-    weekly_volume = compute_volume_trends(df)
-    volume_fig = os.path.join(FIGURE_DIR, "weekly_volume.png")
-    plot_volume_trends(weekly_volume, volume_fig)
-    
+        raw_df = pd.read_parquet(PATHS["input"])
+        df = generate_predictions(raw_df)
+
+    # Assign campaign phases and events
+    df['phase'] = df['timestamp'].apply(assign_campaign_phase)
+    df['event'] = df['timestamp'].apply(assign_event)
+
+    # Phase Swing Analysis
+    swing_results = calculate_swings(df)
+    swing_results.to_csv(os.path.join(PATHS["output"], "campaign_swing_analysis.csv"))
+
+    # Event-Driven Sentiment Summary
+    event_summary = event_sentiment_summary(df)
+    event_summary.to_csv(os.path.join(PATHS["output"], "event_sentiment_summary.csv"))
+
+    print("Phase Swing Analysis:")
+    print(swing_results)
+    print("\nEvent-Driven Sentiment Summary:")
+    print(event_summary)
+    print(f"\nReports saved to: {PATHS['output']}")
+
 if __name__ == "__main__":
     main()

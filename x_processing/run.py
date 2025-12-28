@@ -38,7 +38,6 @@ nltk.download('wordnet', quiet=True)
 
 # Directories
 MODEL_DIR = "x_processing/models"
-OUTPUT_DIR = "x_processing/outputs"
 INPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "x-24-us-election"))
 
 # File paths
@@ -364,12 +363,12 @@ def train_and_save_models(X, y, model_candidates, task_name,
         print(f"Training time: {elapsed:.2f} seconds")
         
         # Evaluate on test set
-        eval_output_path = os.path.join(OUTPUT_DIR, f"{name}_{task_name}_evaluation.txt")
+        eval_output_path = os.path.join(MODEL_DIR, f"{name}_{task_name}_evaluation.txt")
         test_acc = evaluate_model(pipeline, X_test, y_test, f"{name} ({task_name})", 
                                   output_path=eval_output_path)
 
         # Save CV results
-        cv_output_path = os.path.join(OUTPUT_DIR, f"{name}_{task_name}_cv_results.txt")
+        cv_output_path = os.path.join(MODEL_DIR, f"{name}_{task_name}_cv_results.txt")
         with open(cv_output_path, "w") as f:
             f.write(cv_summary)
 
@@ -395,12 +394,8 @@ def main():
     """
     Main pipeline: preprocess, train (if needed), predict, and prepare for analysis.
     """
-    # Create directories
-    for directory in [MODEL_DIR, OUTPUT_DIR]:
-        os.makedirs(directory, exist_ok=True)
-    
+    # Create directories    
     total_start = time.time()
-
     
     start = time.time()
     if os.path.exists(LABELLED_PARQUET) and os.path.exists(UNLABELLED_PARQUET):
@@ -559,7 +554,7 @@ def main():
     # if not os.path.exists(PREDICTIONS_PARQUET):
     print(f"\nApplying models to {len(unlabelled_df):,} unlabelled tweets...")
 
-    # Load trained models (use LinearSVC for sentiment as it typically performs best)
+    # Load trained models (use LinearSVC for sentiment as it performs best)
     party_model = joblib.load(os.path.join(MODEL_DIR, "LightGBM_party_classifier.joblib"))
     dem_sent_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_democrat_sentiment_classifier.joblib"))
     rep_sent_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_republican_sentiment_classifier.joblib"))

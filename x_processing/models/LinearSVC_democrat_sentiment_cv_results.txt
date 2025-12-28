@@ -1,5 +1,6 @@
-LinearSVC CV Results for democrat_sentiment:
-Accuracy:  0.9860 +/- 0.0005
-Precision: 0.9855 +/- 0.0006
-Recall:    0.9851 +/- 0.0005
-F1:        0.9853 +/- 0.0005
+
+LinearSVC Cross-Validation Results (democrat_sentiment):
+Accuracy:  0.9861 ± 0.0004
+Precision: 0.9856 ± 0.0004
+Recall:    0.9852 ± 0.0004
+F1:        0.9854 ± 0.0004

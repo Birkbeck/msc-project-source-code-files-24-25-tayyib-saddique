@@ -1,16 +1,18 @@
 
 LinearSVC (democrat_sentiment)
-Accuracy: 0.9863
+============================================================
+Accuracy: 0.9860
+
 Classification Report:
               precision    recall  f1-score   support
 
     negative       0.99      0.99      0.99     50780
-    positive       0.98      0.98      0.98     31943
+    positive       0.98      0.98      0.98     31942
 
-    accuracy                           0.99     82723
-   macro avg       0.99      0.99      0.99     82723
-weighted avg       0.99      0.99      0.99     82723
+    accuracy                           0.99     82722
+   macro avg       0.99      0.99      0.99     82722
+weighted avg       0.99      0.99      0.99     82722
 
 Confusion Matrix:
 [[50235   545]
- [  591 31352]]
+ [  612 31330]]

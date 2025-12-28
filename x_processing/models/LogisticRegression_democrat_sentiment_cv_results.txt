@@ -1,5 +1,6 @@
-LogisticRegression CV Results for democrat_sentiment:
-Accuracy:  0.9854 +/- 0.0005
-Precision: 0.9849 +/- 0.0005
-Recall:    0.9844 +/- 0.0004
-F1:        0.9846 +/- 0.0005
+
+LogisticRegression Cross-Validation Results (democrat_sentiment):
+Accuracy:  0.9855 ± 0.0004
+Precision: 0.9849 ± 0.0004
+Recall:    0.9845 ± 0.0005
+F1:        0.9847 ± 0.0005

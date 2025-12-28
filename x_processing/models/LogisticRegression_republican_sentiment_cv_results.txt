@@ -1,5 +1,6 @@
-LogisticRegression CV Results for republican_sentiment:
-Accuracy:  0.9870 +/- 0.0002
-Precision: 0.9868 +/- 0.0003
-Recall:    0.9868 +/- 0.0002
-F1:        0.9868 +/- 0.0002
+
+LogisticRegression Cross-Validation Results (republican_sentiment):
+Accuracy:  0.9871 ± 0.0004
+Precision: 0.9869 ± 0.0004
+Recall:    0.9869 ± 0.0004
+F1:        0.9869 ± 0.0004

@@ -1,6 +1,8 @@
 
 LinearSVC (republican_sentiment)
-Accuracy: 0.9879
+============================================================
+Accuracy: 0.9882
+
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +14,5 @@ Classification Report:
 weighted avg       0.99      0.99      0.99     90154
 
 Confusion Matrix:
-[[38246   549]
- [  546 50813]]
+[[38261   534]
+ [  530 50829]]
