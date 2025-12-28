@@ -1,6 +1,6 @@
 Task: party
 Model: LightGBM
-Average CV Accuracy: 0.9092
+Average CV Accuracy: 0.9090
 
 Best Parameters:
 num_leaves: 63

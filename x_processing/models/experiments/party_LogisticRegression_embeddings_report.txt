@@ -1,6 +1,6 @@
 
 party (LogisticRegression, embeddings)
-Accuracy: 0.8129
+Accuracy: 0.8122
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.81      0.81      0.81    172876
 
 Confusion Matrix:
-[[65865 16858]
- [15495 74658]]
+[[65956 16767]
+ [15703 74450]]

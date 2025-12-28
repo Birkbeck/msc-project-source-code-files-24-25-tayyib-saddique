@@ -1,16 +1,16 @@
 
 republican_sentiment (RandomForest, embeddings)
-Accuracy: 0.8919
+Accuracy: 0.8917
 Classification Report:
               precision    recall  f1-score   support
 
-    negative       0.89      0.85      0.87     38795
-    positive       0.89      0.92      0.91     51359
+    negative       0.89      0.86      0.87     38795
+    positive       0.90      0.92      0.91     51359
 
     accuracy                           0.89     90154
    macro avg       0.89      0.89      0.89     90154
 weighted avg       0.89      0.89      0.89     90154
 
 Confusion Matrix:
-[[33160  5635]
- [ 4113 47246]]
+[[33313  5482]
+ [ 4280 47079]]

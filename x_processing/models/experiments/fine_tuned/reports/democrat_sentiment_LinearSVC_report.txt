@@ -1,6 +1,6 @@
 Task: democrat_sentiment
 Model: LinearSVC
-Average CV Accuracy: 0.9862
+Average CV Accuracy: 0.9860
 
 Best Parameters:
 C: 0.6338653441536255

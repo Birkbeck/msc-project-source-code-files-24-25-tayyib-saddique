@@ -1,15 +1,15 @@
-Accuracy: 0.8235
+Accuracy: 0.8195
 
 Classification Report:
               precision    recall  f1-score   support
 
-    democrat       0.82      0.81      0.81     82723
-  republican       0.83      0.84      0.83     90153
+    democrat       0.82      0.80      0.81     82723
+  republican       0.82      0.83      0.83     90153
 
     accuracy                           0.82    172876
    macro avg       0.82      0.82      0.82    172876
 weighted avg       0.82      0.82      0.82    172876
 
 Confusion Matrix:
-[[66795 15928]
- [14585 75568]]
+[[66463 16260]
+ [14952 75201]]

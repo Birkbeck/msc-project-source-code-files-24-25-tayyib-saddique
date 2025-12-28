@@ -1,6 +1,6 @@
 
 party (LinearSVC, tfidf)
-Accuracy: 0.9030
+Accuracy: 0.9027
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.90      0.90      0.90    172876
 
 Confusion Matrix:
-[[75112  7611]
- [ 9152 81001]]
+[[74955  7768]
+ [ 9059 81094]]

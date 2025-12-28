@@ -1,7 +1,7 @@
 Task: party
 Model: LinearSVC
-Average CV Accuracy: 0.9025
+Average CV Accuracy: 0.9023
 
 Best Parameters:
-C: 0.6672367170464204
+C: 0.7362945281639215
 loss: hinge

@@ -1,10 +1,10 @@
 
 democrat_sentiment (LogisticRegression, tfidf)
-Accuracy: 0.9848
+Accuracy: 0.9841
 Classification Report:
               precision    recall  f1-score   support
 
-    negative       0.99      0.99      0.99     50780
+    negative       0.98      0.99      0.99     50780
     positive       0.98      0.98      0.98     31943
 
     accuracy                           0.98     82723
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.98      0.98      0.98     82723
 
 Confusion Matrix:
-[[50246   534]
- [  723 31220]]
+[[50231   549]
+ [  768 31175]]

@@ -1,16 +1,16 @@
 
 republican_sentiment (LogisticRegression, embeddings)
-Accuracy: 0.9345
+Accuracy: 0.9351
 Classification Report:
               precision    recall  f1-score   support
 
     negative       0.92      0.93      0.92     38795
     positive       0.95      0.94      0.94     51359
 
-    accuracy                           0.93     90154
+    accuracy                           0.94     90154
    macro avg       0.93      0.93      0.93     90154
-weighted avg       0.93      0.93      0.93     90154
+weighted avg       0.94      0.94      0.94     90154
 
 Confusion Matrix:
-[[36017  2778]
- [ 3123 48236]]
+[[36028  2767]
+ [ 3088 48271]]

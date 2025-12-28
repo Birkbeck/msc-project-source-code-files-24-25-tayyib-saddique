@@ -1,6 +1,6 @@
 
 republican_sentiment (LinearSVC, tfidf)
-Accuracy: 0.9884
+Accuracy: 0.9886
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.99      0.99      0.99     90154
 
 Confusion Matrix:
-[[38274   521]
- [  525 50834]]
+[[38296   499]
+ [  531 50828]]

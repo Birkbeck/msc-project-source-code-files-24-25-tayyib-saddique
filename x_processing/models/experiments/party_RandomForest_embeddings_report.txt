@@ -1,6 +1,6 @@
 
 party (RandomForest, embeddings)
-Accuracy: 0.8037
+Accuracy: 0.8014
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.80      0.80      0.80    172876
 
 Confusion Matrix:
-[[64666 18057]
- [15878 74275]]
+[[64462 18261]
+ [16068 74085]]

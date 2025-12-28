@@ -1,6 +1,6 @@
 
 democrat_sentiment (LinearSVC, tfidf)
-Accuracy: 0.9873
+Accuracy: 0.9867
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.99      0.99      0.99     82723
 
 Confusion Matrix:
-[[50277   503]
- [  551 31392]]
+[[50266   514]
+ [  588 31355]]

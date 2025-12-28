@@ -1,6 +1,6 @@
 
 democrat_sentiment (SGDClassifier, tfidf)
-Accuracy: 0.9798
+Accuracy: 0.9788
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.98      0.98      0.98     82723
 
 Confusion Matrix:
-[[50125   655]
- [ 1015 30928]]
+[[50128   652]
+ [ 1105 30838]]

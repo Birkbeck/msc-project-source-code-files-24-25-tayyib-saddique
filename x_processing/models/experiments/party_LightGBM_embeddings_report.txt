@@ -1,10 +1,10 @@
 
 party (LightGBM, embeddings)
-Accuracy: 0.8109
+Accuracy: 0.8117
 Classification Report:
               precision    recall  f1-score   support
 
-    democrat       0.80      0.81      0.80     82723
+    democrat       0.80      0.81      0.81     82723
   republican       0.82      0.81      0.82     90153
 
     accuracy                           0.81    172876
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.81      0.81      0.81    172876
 
 Confusion Matrix:
-[[67156 15567]
- [17124 73029]]
+[[67207 15516]
+ [17032 73121]]

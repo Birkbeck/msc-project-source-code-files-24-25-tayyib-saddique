@@ -1,6 +1,6 @@
 
 democrat_sentiment (LightGBM, embeddings)
-Accuracy: 0.9082
+Accuracy: 0.9077
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.91      0.91      0.91     82723
 
 Confusion Matrix:
-[[48200  2580]
- [ 5013 26930]]
+[[48137  2643]
+ [ 4996 26947]]

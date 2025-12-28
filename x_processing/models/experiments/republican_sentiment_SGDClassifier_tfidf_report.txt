@@ -1,6 +1,6 @@
 
 republican_sentiment (SGDClassifier, tfidf)
-Accuracy: 0.9824
+Accuracy: 0.9826
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.98      0.98      0.98     90154
 
 Confusion Matrix:
-[[37964   831]
- [  755 50604]]
+[[37967   828]
+ [  741 50618]]

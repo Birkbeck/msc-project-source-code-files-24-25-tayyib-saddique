@@ -1,6 +1,6 @@
 
 party (SGDClassifier, tfidf)
-Accuracy: 0.8908
+Accuracy: 0.8912
 Classification Report:
               precision    recall  f1-score   support
 
@@ -13,4 +13,4 @@ weighted avg       0.89      0.89      0.89    172876
 
 Confusion Matrix:
 [[74854  7869]
- [11004 79149]]
+ [10935 79218]]

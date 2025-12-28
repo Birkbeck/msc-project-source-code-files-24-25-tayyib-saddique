@@ -1,16 +1,3 @@
-#!/usr/bin/env python3
-"""
-Production-ready pipeline:
-- Parallel preprocessing & weak labeling from compressed CSVs (csv.gz)
-- Parquet cache for labelled/unlabelled outputs
-- Embedding-based models (SentenceTransformers -> optional PCA -> MLP via skorch)
-- Three tasks:
-    1) entity (democrat/republican)
-    2) dem sentiment (positive/negative) - trained only on democrat-labelled rows
-    3) rep sentiment (positive/negative) - trained only on republican-labelled rows
-- Save models + encoders + evaluation reports
-"""
-
 import os
 import re
 import time
@@ -76,13 +63,25 @@ CANDIDATE_KEYWORDS = {
     "republican": ["#maga", "republican", "#trump2024", "@realdonaldtrump", "trump"]
 }
 STRONG_SENTIMENT_THRESHOLD = 0.8
+CAMPAIGN_START_DATE = pd.Timestamp("2024-05-01") 
 
 # Ensure model dir exists
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-# ------------------------
+# Helper functions
+def convert_to_timestamp(df):
+    """Create 'timestamp' column from date/epoch, coerce errors."""
+    df['timestamp'] = pd.to_datetime(df['date'], errors='coerce')
+    missing_date_mask = df['timestamp'].isna() & df['epoch'].notna()
+    df.loc[missing_date_mask, 'timestamp'] = pd.to_datetime(df.loc[missing_date_mask, 'epoch'], unit='s')
+    return df
+
+def filter_campaign_tweets(df):
+    """Keep only tweets after May 1, 2024."""
+    df = convert_to_timestamp(df)
+    return df[df['timestamp'] >= CAMPAIGN_START_DATE]
+
 # Preprocessing & Weak-label functions
-# ------------------------
 def preprocess(text: str) -> str:
     """Lowercase, demojize, remove URLs/mentions, basic tokenization + lemmatization + stopword removal."""
     text = (text or "").lower()
@@ -111,42 +110,44 @@ def label_sentiment(text: str):
     return None
 
 
-def load_preprocess_weak_label(file_path: str):
-    """
-    Read a compressed CSV (csv.gz) with columns id, rawContent, lang.
-    Return (labelled_df, unlabelled_df) or (None, None) on empty.
-    """
+def load_preprocess_weak_label(file_path):
     try:
-        df = pd.read_csv(file_path, compression="gzip", usecols=["id", "rawContent", "lang"],
-                         dtype={"id": str, "rawContent": str, "lang": str})
+        df = pd.read_csv(
+            file_path,
+            compression="gzip",
+            usecols=["id", "rawContent", "lang", "date", "epoch"],
+            dtype={"id": str, "rawContent": str, "lang": str, "date": str, "epoch": object}
+        )
+        df = df[df["lang"] == "en"]
+        if df.empty:
+            return None, None
+
+        df = filter_campaign_tweets(df)
+        if df.empty:
+            return None, None
+
+        df = df.rename(columns={"rawContent": "text"})
+        df['clean_text'] = df['text'].apply(preprocess)
+        df['party'] = df['text'].apply(detect_candidate)
+        df['sentiment_score'] = df['text'].apply(lambda t: vader.polarity_scores(t)['compound'])
+        df['sentiment'] = df['sentiment_score'].apply(
+            lambda score: 'positive' if score >= STRONG_SENTIMENT_THRESHOLD else 'negative'
+            if score <= -STRONG_SENTIMENT_THRESHOLD else None
+        )
+
+        labelled = df.dropna(subset=['party', 'sentiment'])
+        unlabelled = df[df['party'].isna() | df['sentiment'].isna()]
+
+        if labelled.empty and unlabelled.empty:
+            return None, None
+
+        return (
+            labelled[['clean_text', 'date', 'party', 'sentiment', 'sentiment_score']],
+            unlabelled[['id', 'clean_text', 'text', 'date']]
+        )
     except Exception as e:
-        logging.exception("Failed to read %s: %s", file_path, e)
+        print(f"Error processing {file_path}: {e}")
         return None, None
-
-    if df.empty:
-        return None, None
-
-    df = df[df["lang"] == "en"].copy()
-    if df.empty:
-        return None, None
-
-    df = df.rename(columns={"rawContent": "text"})
-    df["clean_text"] = df["text"].apply(preprocess)
-    df["party"] = df["text"].apply(detect_candidate)         # weak party label
-    df["sentiment_score"] = df["text"].apply(lambda t: vader.polarity_scores(t)["compound"])
-    df["sentiment"] = df["sentiment_score"].apply(
-        lambda s: "positive" if s >= STRONG_SENTIMENT_THRESHOLD else ("negative" if s <= -STRONG_SENTIMENT_THRESHOLD else None)
-    )
-
-    labelled = df.dropna(subset=["party", "sentiment"])
-    unlabelled = df[df["party"].isna() | df["sentiment"].isna()]
-
-    if labelled.empty and unlabelled.empty:
-        return None, None
-
-    labelled = labelled[["clean_text", "party", "sentiment", "sentiment_score"]]
-    unlabelled = unlabelled[["id", "clean_text", "text"]]
-    return labelled, unlabelled
 
 
 def find_all_files_recursively(directory: Path, extension: str = ".csv.gz"):

@@ -1,6 +1,6 @@
 
 party (LogisticRegression, tfidf)
-Accuracy: 0.9038
+Accuracy: 0.9039
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.90      0.90      0.90    172876
 
 Confusion Matrix:
-[[75180  7543]
- [ 9095 81058]]
+[[75121  7602]
+ [ 9018 81135]]

@@ -41,11 +41,27 @@ CANDIDATE_KEYWORDS = {
     'republican': ['#maga', 'republican', '#trump2024', '@realdonaldtrump']
 }
 STRONG_SENTIMENT_THRESHOLD = 0.8
+# some tweets are dated prior to 05 May 2024
+CAMPAIGN_START_DATE = pd.Timestamp("2024-05-01") 
+
 MODEL_DIR = "x_processing/models/experiments"
 labelled_parquet = "x_processing/train_labelled.parquet"
 unlabelled_parquet = "x_processing/train_unlabelled.parquet"
 
-# ---------------- Preprocessing & Weak labeling ----------------
+# Helper functions
+def convert_to_timestamp(df):
+    """Create 'timestamp' column from date/epoch, coerce errors."""
+    df['timestamp'] = pd.to_datetime(df['date'], errors='coerce')
+    missing_date_mask = df['timestamp'].isna() & df['epoch'].notna()
+    df.loc[missing_date_mask, 'timestamp'] = pd.to_datetime(df.loc[missing_date_mask, 'epoch'], unit='s')
+    return df
+
+def filter_campaign_tweets(df):
+    """Keep only tweets after May 1, 2024."""
+    df = convert_to_timestamp(df)
+    return df[df['timestamp'] >= CAMPAIGN_START_DATE]
+
+# Preprocessing & Weak labeling
 def preprocess(text):
     text = text.lower()
     text = emoji.demojize(text, delimiters=(" ", " "))
@@ -76,10 +92,14 @@ def load_preprocess_weak_label(file_path):
         df = pd.read_csv(
             file_path,
             compression="gzip",
-            usecols=["id", "rawContent", "lang"],
-            dtype={"id": str, "rawContent": str, "lang": str}
+            usecols=["id", "rawContent", "lang", "date", "epoch"],
+            dtype={"id": str, "rawContent": str, "lang": str, "date": str, "epoch": object}
         )
         df = df[df["lang"] == "en"]
+        if df.empty:
+            return None, None
+
+        df = filter_campaign_tweets(df)
         if df.empty:
             return None, None
 
@@ -99,12 +119,13 @@ def load_preprocess_weak_label(file_path):
             return None, None
 
         return (
-            labelled[['clean_text', 'party', 'sentiment', 'sentiment_score']],
-            unlabelled[['id', 'clean_text', 'text']]
+            labelled[['clean_text', 'date', 'party', 'sentiment', 'sentiment_score']],
+            unlabelled[['id', 'clean_text', 'text', 'date']]
         )
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None, None
+
 
 def find_all_files_recursively(directory, extension=".csv.gz"):
     files = []
@@ -114,7 +135,7 @@ def find_all_files_recursively(directory, extension=".csv.gz"):
                 files.append(os.path.join(root, filename))
     return files
 
-# ---------------- Evaluation ----------------
+#  Evaluation 
 def evaluate_model(pipeline, X_test, y_test, model_name, output_path=None):
     y_pred = pipeline.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
@@ -132,7 +153,7 @@ def evaluate_model(pipeline, X_test, y_test, model_name, output_path=None):
 
     return acc
 
-# ---------------- Transformers ----------------
+#  Transformers 
 def vader_sentiment_features(X):
     """ Returns a NumPy array with 4 columns: neg, neu, pos, compound scores. """
     features = []

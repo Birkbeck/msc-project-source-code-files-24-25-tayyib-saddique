@@ -1,6 +1,6 @@
 
 democrat_sentiment (RandomForest, tfidf)
-Accuracy: 0.7045
+Accuracy: 0.7048
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.79      0.70      0.64     82723
 
 Confusion Matrix:
-[[50628   152]
- [24291  7652]]
+[[50610   170]
+ [24250  7693]]

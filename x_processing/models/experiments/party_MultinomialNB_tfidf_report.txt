@@ -1,6 +1,6 @@
 
 party (MultinomialNB, tfidf)
-Accuracy: 0.8076
+Accuracy: 0.8062
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.81      0.81      0.81    172876
 
 Confusion Matrix:
-[[68466 14257]
- [19003 71150]]
+[[68393 14330]
+ [19181 70972]]

@@ -1,6 +1,6 @@
 
 republican_sentiment (MultinomialNB, tfidf)
-Accuracy: 0.9508
+Accuracy: 0.9503
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.95      0.95      0.95     90154
 
 Confusion Matrix:
-[[37221  1574]
- [ 2866 48493]]
+[[37250  1545]
+ [ 2936 48423]]

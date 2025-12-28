@@ -1,6 +1,6 @@
 Task: democrat_sentiment
 Model: LogisticRegression
-Average CV Accuracy: 0.9858
+Average CV Accuracy: 0.9855
 
 Best Parameters:
-C: 21.368329072358737
+C: 29.154431891537524

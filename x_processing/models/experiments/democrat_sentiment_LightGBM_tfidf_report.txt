@@ -1,10 +1,10 @@
 
 democrat_sentiment (LightGBM, tfidf)
-Accuracy: 0.9357
+Accuracy: 0.9355
 Classification Report:
               precision    recall  f1-score   support
 
-    negative       0.93      0.96      0.95     50780
+    negative       0.93      0.97      0.95     50780
     positive       0.94      0.89      0.91     31943
 
     accuracy                           0.94     82723
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.94      0.94      0.94     82723
 
 Confusion Matrix:
-[[48960  1820]
- [ 3496 28447]]
+[[49024  1756]
+ [ 3582 28361]]

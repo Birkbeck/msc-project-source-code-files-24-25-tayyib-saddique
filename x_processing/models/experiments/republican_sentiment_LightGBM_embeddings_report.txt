@@ -1,6 +1,6 @@
 
 republican_sentiment (LightGBM, embeddings)
-Accuracy: 0.9177
+Accuracy: 0.9175
 Classification Report:
               precision    recall  f1-score   support
 
@@ -12,5 +12,5 @@ Classification Report:
 weighted avg       0.92      0.92      0.92     90154
 
 Confusion Matrix:
-[[35383  3412]
- [ 4011 47348]]
+[[35415  3380]
+ [ 4054 47305]]
