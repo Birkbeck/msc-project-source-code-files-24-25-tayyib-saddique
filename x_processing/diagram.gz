@@ -1,0 +1,241 @@
+digraph TextProcessingSystem {
+    splines=ortho;
+    nodesep=0.6;
+    ranksep=0.4;
+    fontname="Helvetica";
+
+    // =====================
+    // Raw Input
+    // =====================
+    Raw [
+        label="Raw Input Data",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#fff3cd",
+        color="#f0ad4e",
+        fontsize=10,
+        fontname="Helvetica-Bold"
+    ];
+
+    // =====================
+    // Text Preprocessing (YOUR PROVIDED BLOCK)
+    // =====================
+    subgraph cluster_preprocessing {
+        label="Text Preprocessing";
+        style="rounded,dashed";
+        color="#5bc0de";
+        fontsize=12;
+        fontname="Helvetica-Bold";
+
+        Lower [
+            label="Lowercase Text",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#cfe2f3",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        Emoji [
+            label="Emoji Demojize",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#cfe2f3",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        URLs [
+            label="Remove URLs & Mentions",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#cfe2f3",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        Special [
+            label="Remove Special Characters",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#cfe2f3",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        Token [
+            label="Tokenization",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#cfe2f3",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        Lemma [
+            label="Lemmatization + Stopword Removal",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#cfe2f3",
+            width=2.6,
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        { rank=same; Lower; URLs; Token; }
+
+        Lower -> Emoji;
+        Emoji -> URLs;
+        URLs -> Special;
+        Special -> Token;
+        Token -> Lemma;
+    }
+
+    Raw -> Lower;
+
+    // =====================
+    // Intermediate Data Logic
+    // =====================
+    Curated [
+        label="Cleaned Output",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#fff3cd",
+        color="#f0ad4e",
+        fontsize=10,
+        fontname="Helvetica"
+    ];
+
+    Weak [
+        label="Weak Labelling\n(Party and Sentiment)",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#d4edda",
+        color="#28a745",
+        fontsize=10,
+        fontname="Helvetica"
+    ];
+
+    Labelled [
+        label="Labelled Data",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#e2f0cb",
+        color="#82b1ff", // Matches the greenish-blue border in image
+        fontsize=10,
+        fontname="Helvetica"
+    ];
+
+    Unlabelled [
+        label="Unlabelled Data",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#e2f0cb",
+        color="#82b1ff",
+        fontsize=10,
+        fontname="Helvetica"
+    ];
+
+    Lemma -> Curated;
+    Weak -> Curated;
+    // Curated -> Weak;       // Flow goes Right
+    Weak -> Unlabelled; // Flow goes Down (Left)
+    Weak -> Labelled;     // Flow goes Down (Right)
+    { rank=same; Weak; Curated; }
+    { rank=same; Labelled; Unlabelled; }
+
+    // =====================
+    // Entity–Sentiment Pipeline
+    // =====================
+    subgraph cluster_models {
+        label="Entity-Sentiment Pipeline    ";
+        labeljust="r";
+        style="rounded,dashed";
+        color="#d9534f";
+        fontsize=12;
+        fontname="Helvetica-Bold";
+
+        Party [
+            label="Party Model",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#c3e6cb",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        DemSent [
+            label="Democrat Sentiment Model",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#c3e6cb",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        RepSent [
+            label="Republican Sentiment Model",
+            shape=rectangle,
+            style="filled,rounded",
+            fillcolor="#c3e6cb",
+            fontsize=10,
+            fontname="Helvetica"
+        ];
+
+        Party -> DemSent;
+        Party -> RepSent;
+        
+        { rank=same; Party; DemSent; }
+    }
+
+    // Dashed connectors to indicate data flow to models
+    // :w (West/Left) to :n (North/Top)
+    Labelled:w -> Party:n [style=dashed];
+    Unlabelled -> Models [style=dashed];
+
+    // =====================
+    // Final Outputs
+    // =====================
+    Models [
+        label="Models",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#ffe082",
+        color="#f0ad4e",
+        fontsize=10,
+        fontname="Helvetica",
+        width=1.5
+    ];
+
+    Predicted [
+        label="Predicted Output",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#ffe082",
+        color="#f0ad4e",
+        fontsize=10,
+        fontname="Helvetica",
+        width=1.5
+
+    ];
+
+    Analysis [
+        label="Analysis",
+        shape=rectangle,
+        style="filled,rounded",
+        fillcolor="#ffe082",
+        color="#f0ad4e",
+        fontsize=10,
+        fontname="Helvetica",
+        width=1
+    ];
+
+    // Model convergence
+    Party -> Models;
+    DemSent -> Models;
+    RepSent -> Models;
+
+    Models -> Predicted -> Analysis;
+
+    { rank=same; Models; Predicted; Analysis; }
+}
