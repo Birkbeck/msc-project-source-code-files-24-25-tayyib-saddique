@@ -1,120 +1,136 @@
 import os
 import warnings
-from datetime import datetime
+from datetime import datetime, timedelta
+
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from scipy import stats
 import joblib
 
 warnings.filterwarnings("ignore")
 
-PATHS = {
-    "models": "x_processing/models",
-    "output": "x_processing/outputs",
-    "input": "x_processing/train_unlabelled.parquet",
-    "predictions": "x_processing/predictions_with_timestamps.parquet"
+# --- Configuration & Paths ---
+MODEL_DIR = "x_processing/models"
+OUTPUT_DIR = "x_processing/outputs"
+FIGURE_DIR = "x_processing/figures"
+PREDICTIONS_PARQUET = "x_processing/predictions_with_timestamps.parquet"
+INPUT_DATA = "x_processing/train_unlabelled.parquet"
+
+# Temporal Scope
+ANALYSIS_START = datetime(2024, 5, 1)
+ANALYSIS_END = datetime(2024, 11, 30, 23, 59, 59)
+
+# Key Events
+EVENTS = {
+    "Trump Assassination Attempt": datetime(2024, 7, 13),
+    "Biden Withdrawal": datetime(2024, 7, 21),
+    "Harris Nomination": datetime(2024, 8, 6)
 }
 
-# Key campaign events
-EVENTS = {
-    "Biden Exit": datetime(2024, 7, 21),
-    "Harris Entry": datetime(2024, 7, 22),
-    "Trump Assassination": datetime(2024, 10, 15),  # Example date
-    "Election Day": datetime(2024, 11, 5)
+# Campaign Phases
+PHASES = {
+    "Biden Campaign": (datetime(2024, 5, 1), datetime(2024, 7, 21)),
+    "Harris Campaign": (datetime(2024, 7, 22), datetime(2024, 11, 5)),
+    "Post-Election": (datetime(2024, 11, 6), datetime(2024, 11, 30))
 }
 
 def assign_campaign_phase(ts):
-    """Segment tweets into structural campaign periods based on dates."""
-    if pd.isna(ts): 
-        return "Unknown"
-    
-    if datetime(2024, 5, 1) <= ts <= EVENTS["Biden Exit"]:
-        return "Biden Campaign"
-    elif EVENTS["Harris Entry"] <= ts < EVENTS["Election Day"]:
-        return "Harris Campaign"
-    elif ts >= EVENTS["Election Day"]:
-        return "Post-Election"
-    return "Other"
+    if pd.isna(ts): return "Unknown"
+    for phase, (start, end) in PHASES.items():
+        if start <= ts <= end: return phase
+    return "Outside Scope"
 
-def assign_event(ts):
-    """Flag tweets corresponding to key campaign events."""
-    if pd.isna(ts):
-        return "No Event"
-    for event_name, event_date in EVENTS.items():
-        # Mark tweets on the exact day of the event
-        if ts.date() == event_date.date():
-            return event_name
-    return "No Event"
+def generate_discourse_predictions(df):
+    """
+    Classifies 'discourse_alignment' (Topic) and 'sentiment' (Tone).
+    Renamed from 'party' to reflect that we are tracking discourse target.
+    """
+    print(f"Generating predictions for {len(df):,} tweets...")
+    
+    party_model = joblib.load(os.path.join(MODEL_DIR, "LightGBM_party_classifier.joblib"))
+    dem_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_democrat_sentiment_classifier.joblib"))
+    rep_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_republican_sentiment_classifier.joblib"))
 
-def generate_predictions(df):
-    """Apply pre-trained classifiers to unlabelled data."""
-    print("Loading models and classifying tweets...")
-    p_model = joblib.load(os.path.join(PATHS["models"], "LightGBM_party_classifier.joblib"))
-    d_model = joblib.load(os.path.join(PATHS["models"], "LinearSVC_democrat_sentiment_classifier.joblib"))
-    r_model = joblib.load(os.path.join(PATHS["models"], "LinearSVC_republican_sentiment_classifier.joblib"))
+    # Track who the discourse is ABOUT
+    df['discourse_alignment'] = party_model.predict(df['clean_text'])
     
-    # Predict Party
-    df['party'] = p_model.predict(df['clean_text'])
-    
-    # Predict Sentiment based on Party
-    for party, model in [('democrat', d_model), ('republican', r_model)]:
-        mask = df['party'] == party
-        if mask.any():
-            df.loc[mask, 'sentiment'] = model.predict(df.loc[mask, 'clean_text'])
-    
-    df.to_parquet(PATHS["predictions"], index=False)
+    dem_mask = df['discourse_alignment'] == 'democrat'
+    rep_mask = df['discourse_alignment'] == 'republican'
+
+    df.loc[dem_mask, 'sentiment'] = dem_model.predict(df.loc[dem_mask, 'clean_text'])
+    df.loc[rep_mask, 'sentiment'] = rep_model.predict(df.loc[rep_mask, 'clean_text'])
+
+    df.to_parquet(PREDICTIONS_PARQUET, index=False)
     return df
 
-def calculate_swings(df):
-    """Calculate sentiment swings across campaign phases."""
-    core_df = df[df['phase'].isin(["Biden Campaign", "Harris Campaign"])]
-    core_df = core_df.dropna(subset=['sentiment', 'party'])
-    
-    # % Positive sentiment by phase and party
-    metrics = core_df.groupby(['phase', 'party'])['sentiment'].apply(
-        lambda x: (x == 'positive').mean()
-    ).unstack()
-    
-    # Calculate swing from Biden -> Harris
-    if 'Harris Campaign' in metrics.index and 'Biden Campaign' in metrics.index:
-        swing = metrics.loc['Harris Campaign'] - metrics.loc['Biden Campaign']
-        swing.name = 'Sentiment Swing'
-        return pd.concat([metrics, swing.to_frame().T])
-    return metrics
+def analyze_event_impact(df, window_days=7):
+    """Statistically evaluates if an event shifted the tone of party-aligned discourse."""
+    results = []
+    for event, date in EVENTS.items():
+        for align in ['democrat', 'republican']:
+            pre = df[(df['discourse_alignment'] == align) & 
+                     (df['timestamp'] >= date - timedelta(days=window_days)) & (df['timestamp'] < date)]
+            post = df[(df['discourse_alignment'] == align) & 
+                      (df['timestamp'] >= date) & (df['timestamp'] <= date + timedelta(days=window_days))]
 
-def event_sentiment_summary(df):
-    """Summarize sentiment for key campaign events."""
-    event_summary = df.groupby(['event', 'party'])['sentiment'].apply(
-        lambda x: (x == 'positive').mean()
-    ).unstack()
-    return event_summary
+            if len(pre) < 15 or len(post) < 15: continue
+
+            # Chi-Square Test for Sentiment Distribution Shift
+            contingency = pd.crosstab(['pre']*len(pre) + ['post']*len(post),
+                                      list(pre['sentiment']) + list(post['sentiment']))
+            _, p_val, _, _ = stats.chi2_contingency(contingency)
+
+            results.append({
+                'event': event, 'alignment': align, 
+                'shift': (post['sentiment'] == 'positive').mean() - (pre['sentiment'] == 'positive').mean(),
+                'significant': p_val < 0.05
+            })
+    return pd.DataFrame(results)
+
+def plot_rolling_discourse(df):
+    """Visualizes the 7-day rolling sentiment of party-aligned discourse."""
+    df['date'] = df['timestamp'].dt.date
+    daily = df.groupby(['date', 'discourse_alignment']).agg(
+        pos_ratio=('sentiment', lambda x: (x == 'positive').mean())
+    ).reset_index()
+
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(figsize=(14, 7))
+    colors = {'democrat': '#1f77b4', 'republican': '#d62728'}
+
+    for align in ['democrat', 'republican']:
+        data = daily[daily['discourse_alignment'] == align].sort_values('date')
+        rolling = data['pos_ratio'].rolling(7).mean()
+        ax.plot(data['date'], rolling, label=f"{align.capitalize()}-Aligned Discourse", color=colors[align], lw=2.5)
+
+    for event, dt in EVENTS.items():
+        ax.axvline(x=dt.date(), color='gray', ls='--', alpha=0.6)
+        ax.text(dt.date(), ax.get_ylim()[1]*0.95, f" {event}", rotation=90, size=9)
+
+    ax.set_title("2024 Election: Sentiment of Party-Aligned Discourse", fontsize=15)
+    ax.set_ylabel("Positive Sentiment Ratio (7-Day MA)")
+    ax.legend(frameon=True, facecolor='white')
+    plt.tight_layout()
+    plt.savefig(os.path.join(FIGURE_DIR, "discourse_sentiment.png"), dpi=300)
 
 def main():
-    os.makedirs(PATHS["output"], exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(FIGURE_DIR, exist_ok=True)
 
-    # Load or Generate Predictions
-    if os.path.exists(PATHS["predictions"]):
-        print(f"Loading existing predictions from {PATHS['predictions']}")
-        df = pd.read_parquet(PATHS["predictions"])
-    else:
-        raw_df = pd.read_parquet(PATHS["input"])
-        df = generate_predictions(raw_df)
+    df = pd.read_parquet(PREDICTIONS_PARQUET) if os.path.exists(PREDICTIONS_PARQUET) else \
+         generate_discourse_predictions(pd.read_parquet(INPUT_DATA))
 
-    # Assign campaign phases and events
-    df['phase'] = df['timestamp'].apply(assign_campaign_phase)
-    df['event'] = df['timestamp'].apply(assign_event)
-
-    # Phase Swing Analysis
-    swing_results = calculate_swings(df)
-    swing_results.to_csv(os.path.join(PATHS["output"], "campaign_swing_analysis.csv"))
-
-    # Event-Driven Sentiment Summary
-    event_summary = event_sentiment_summary(df)
-    event_summary.to_csv(os.path.join(PATHS["output"], "event_sentiment_summary.csv"))
-
-    print("Phase Swing Analysis:")
-    print(swing_results)
-    print("\nEvent-Driven Sentiment Summary:")
-    print(event_summary)
-    print(f"\nReports saved to: {PATHS['output']}")
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df = df[(df['timestamp'] >= ANALYSIS_START) & (df['timestamp'] <= ANALYSIS_END)]
+    
+    # Run Analyses
+    event_impact = analyze_event_impact(df)
+    event_impact.to_csv(os.path.join(OUTPUT_DIR, "event_discourse_impact.csv"), index=False)
+    
+    plot_rolling_discourse(df)
+    print("Pipeline Updated: Terminology now reflects 'Aligned Discourse'.")
 
 if __name__ == "__main__":
     main()

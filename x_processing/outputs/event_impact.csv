@@ -1,0 +1,7 @@
+event,party,change,p_value,significant
+Trump Assassination Attempt,democrat,-0.03205647332706957,0.0,True
+Trump Assassination Attempt,republican,-0.007958645111138862,4.914081713022387e-22,True
+Biden Withdrawal,democrat,0.07095858696556451,0.0,True
+Biden Withdrawal,republican,0.00836684182256453,1.5651384722240163e-20,True
+Harris Nomination,democrat,-0.008006951073644353,1.2906554628294399e-05,True
+Harris Nomination,republican,-0.025485401370046956,7.167818942961385e-11,True
