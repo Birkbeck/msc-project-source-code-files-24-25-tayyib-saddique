@@ -5,13 +5,31 @@ import time
 
 MODEL_DIR = "x_processing/models"
 UNLABELLED_PARQUET = "x_processing/train_unlabelled.parquet"
-OUTPUT_PARQUET = "x_processing/predictions.parquet"
+OUTPUT_PARQUET = "x_processing/predictions_with_timestamps.parquet"
 
+# Date filtering configuration
+CAMPAIGN_START_DATE = pd.Timestamp("2024-05-01")
 CHUNK_SIZE = 500_000 
 
-def load_model(classifier, party=None, directory=MODEL_DIR):
-    """Load hard-coded best model for party or sentiment classification"""
+def convert_to_timestamp(df):
+    """Create timestamp column from date/epoch"""
+    df['timestamp'] = pd.to_datetime(df['date'], errors='coerce')
     
+    if 'epoch' in df.columns:
+        missing_mask = df['timestamp'].isna() & df['epoch'].notna()
+        df.loc[missing_mask, 'timestamp'] = pd.to_datetime(df.loc[missing_mask, 'epoch'], unit='s')
+    
+    return df
+
+
+def filter_campaign_period(df):
+    mask = (df['timestamp'] >= CAMPAIGN_START_DATE)
+    filtered_df = df[mask].copy()    
+    return filtered_df
+
+
+def load_model(classifier, party=None):
+    """Load trained model"""
     if classifier == "party":
         filename = "LightGBM_party_classifier.joblib"
     elif classifier == "sentiment":
@@ -19,91 +37,117 @@ def load_model(classifier, party=None, directory=MODEL_DIR):
             raise ValueError("Party must be specified for sentiment classifier")
         filename = f"LinearSVC_{party.lower()}_sentiment_classifier.joblib"
     else:
-        raise ValueError(f"Unknown classifier type: {classifier}")
+        raise ValueError(f"Unknown classifier: {classifier}")
 
-    model_path = os.path.join(directory, filename)
+    model_path = os.path.join(MODEL_DIR, filename)
     if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Expected model file not found: {model_path}")
+        raise FileNotFoundError(f"Model not found: {model_path}")
     
-    print(f"Loading {classifier} model from: {model_path}")
+    print(f"Loaded: {filename}")
     return joblib.load(model_path)
 
 
 def chunked_predict(model, texts, chunk_size=CHUNK_SIZE, label=""):
-    """Predict in chunks and log progress"""
+    """Predict in chunks with progress tracking"""
     n = len(texts)
-    chunks = [(i, min(i + chunk_size, n)) for i in range(0, n, chunk_size)]
     results = []
-
     start = time.time()
-    for idx, (s, e) in enumerate(chunks, 1):
-        y_chunk = model.predict(texts[s:e])
-        results.extend(y_chunk)
 
+    for i in range(0, n, chunk_size):
+        end = min(i + chunk_size, n)
+        results.extend(model.predict(texts[i:end]))
+        
+        chunk_num = (i // chunk_size) + 1
+        total_chunks = (n + chunk_size - 1) // chunk_size
         elapsed = time.time() - start
-        avg = elapsed / idx
-        remaining = (len(chunks) - idx) * avg
-        print(f"[{label}] Chunk {idx}/{len(chunks)} "
-              f"→ {e:,}/{n:,} rows done "
-              f"(elapsed {elapsed:.1f}s, ~{avg:.1f}s/chunk, ETA {remaining/60:.1f} min)")
+        
+        print(f"[{label}] {chunk_num}/{total_chunks} chunks ({end:,}/{n:,} rows, {elapsed:.1f}s elapsed)")
 
     return results
 
-def main():
-    start_total = time.time()
 
-    # Load models
-    party_model = load_model("party")
-    dem_sentiment_model = load_model("sentiment", party="democrat")
-    rep_sentiment_model = load_model("sentiment", party="republican")
+def print_summary(df):
+    """Print sentiment summary and save to file"""
+    summary_file = "x_processing/sentiment_summary.txt"
+    summary_lines = []
 
-    # Load data
-    start = time.time()
-    print(f"Loading unlabelled data from {UNLABELLED_PARQUET}...")
-    df = pd.read_parquet(UNLABELLED_PARQUET)
-    print(f"Loaded {len(df):,} rows in {time.time() - start:.2f} seconds")
-
-    # Party Prediction
-    print("\nPredicting party labels")
-    start = time.time()
-    df['party'] = chunked_predict(party_model, df['clean_text'].tolist(), label="Party")
-    print(f"Party prediction completed in {time.time() - start:.2f} seconds")
-
-    # Sentiment Prediction per Party
-    print("\nPredicting sentiment per party")
-    for party, model in [("democrat", dem_sentiment_model), ("republican", rep_sentiment_model)]:
-        mask = df['party'] == party
-        n_party = mask.sum()
-        if n_party == 0:
-            print(f"No rows for {party}, skipping sentiment prediction.")
-            continue
-
-        print(f"\n{party.capitalize()} sentiment: {n_party:,} rows")
-        start = time.time()
-        df.loc[mask, 'sentiment'] = chunked_predict(model, df.loc[mask, 'clean_text'].tolist(), label=party)
-        print(f"{party.capitalize()} sentiment prediction done in {time.time() - start:.2f} seconds")
-
-    print("\nSaving predictions...")
-    df.to_parquet(OUTPUT_PARQUET, index=False)
-    print(f"Predictions saved to {OUTPUT_PARQUET}")
-
-    # Calculate positive sentiment ratio per party
-    sentiment_summary = {}
     for party in ["democrat", "republican"]:
         mask = df['party'] == party
-        if mask.sum() > 0:
-            total = mask.sum()
-            positive = (df.loc[mask, 'sentiment'] == "positive").sum()
-            ratio = positive / total
-            sentiment_summary[party] = (positive, total, ratio)
+        total = mask.sum()
+        positive = (df.loc[mask, 'sentiment'] == "positive").sum()
+        negative = total - positive
+        pos_ratio = positive / total if total > 0 else 0
+        neg_ratio = negative / total if total > 0 else 0
 
-    summary_file = "x_processing/sentiment_summary.txt"
+        # Print to console
+        print(f"\n{party.capitalize()}:")
+        print(f"  Total: {total:,}")
+        print(f"  Positive: {positive:,} ({pos_ratio:.2%})")
+        print(f"  Negative: {negative:,} ({neg_ratio:.2%})")
+
+        # Prepare lines to write to file
+        summary_lines.append(f"{party.capitalize()}:\n")
+        summary_lines.append(f"  Positive sentiment: {positive}/{total} ({pos_ratio:.2%})\n")
+        summary_lines.append(f"  Negative sentiment: {negative}/{total} ({neg_ratio:.2%})\n\n")
+
+    # Save to file
     with open(summary_file, "w") as f:
-        for party, (pos, total, ratio) in sentiment_summary.items():
-            f.write(f"{party.capitalize()}:\n")
-            f.write(f"  Positive sentiment: {pos}/{total} ({ratio:.2%})\n\n")
-    print(f"Sentiment summary saved to {summary_file}")
+        f.writelines(summary_lines)
 
+    print(f"\nSentiment summary saved to {summary_file}")
+
+
+def main():
+    start_total = time.time()
+    
+    # Check if predictions already exist
+    if os.path.exists(OUTPUT_PARQUET):
+        print(f"\nLoading existing predictions from {OUTPUT_PARQUET}")
+        df = pd.read_parquet(OUTPUT_PARQUET)
+        print(f"Loaded {len(df):,} tweets")
+        print_summary(df)
+        print(f"\nTotal workflow completed in {time.time() - start_total:.2f} seconds")
+    else:
+        # Load models
+        print("\nLoading models")
+        party_model = load_model("party")
+        dem_model = load_model("sentiment", party="democrat")
+        rep_model = load_model("sentiment", party="republican")
+
+        # Load and filter data
+        print(f"\nLoading data from {UNLABELLED_PARQUET}")
+        df = pd.read_parquet(UNLABELLED_PARQUET)
+        print(f"  Loaded {len(df):,} tweets")
+
+        df = filter_campaign_period(df)
+
+        # Predict party
+        print("\nClassifying party affiliation")
+        df['party'] = chunked_predict(party_model, df['clean_text'].tolist(), label="Party")
+
+        print(f"\nParty distribution:")
+        for party, count in df['party'].value_counts().items():
+            print(f"{party.capitalize()}: {count:,} ({count/len(df):.1%})")
+
+        # Predict sentiment by party
+        print("\nClassifying sentiment")
+        for party, model in [("democrat", dem_model), ("republican", rep_model)]:
+            mask = df['party'] == party
+            if mask.sum() > 0:
+                df.loc[mask, 'sentiment'] = chunked_predict(
+                    model, 
+                    df.loc[mask, 'clean_text'].tolist(), 
+                    label=party.capitalize()
+                )
+
+        # Save results
+        print(f"\nSaving to {OUTPUT_PARQUET}")
+        df.to_parquet(OUTPUT_PARQUET, index=False)
+        print("Saved")
+
+        # Print summary
+        print_summary(df)
+    
     print(f"\nTotal workflow completed in {time.time() - start_total:.2f} seconds")
 
 
