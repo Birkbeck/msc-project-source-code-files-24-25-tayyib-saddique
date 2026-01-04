@@ -183,6 +183,7 @@ def train_and_save(X, y, model, name, task, max_features, n_splits=5):
         f.write("Classification Report:\n")
         f.write(report + "\n\n")
         f.write("Confusion Matrix:\n")
+        f.write(cm)
     print(f"Saved evaluation report:{eval_path}")
 
     #  Save model 
