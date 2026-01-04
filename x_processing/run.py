@@ -43,7 +43,6 @@ INPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "x-24-
 # File paths
 LABELLED_PARQUET = "x_processing/train_labelled.parquet"
 UNLABELLED_PARQUET = "x_processing/train_unlabelled.parquet"
-PREDICTIONS_PARQUET = "x_processing/predictions_with_timestamps.parquet"
 
 # Configuration
 CANDIDATE_KEYWORDS = {
@@ -550,45 +549,6 @@ def main():
         X_rep, y_rep, rep_sentiment_models, 
         task_name="republican_sentiment", tfidf_max_features=10000
     )
-    
-    # if not os.path.exists(PREDICTIONS_PARQUET):
-    print(f"\nApplying models to {len(unlabelled_df):,} unlabelled tweets...")
-
-    # Load trained models (use LinearSVC for sentiment as it performs best)
-    party_model = joblib.load(os.path.join(MODEL_DIR, "LightGBM_party_classifier.joblib"))
-    dem_sent_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_democrat_sentiment_classifier.joblib"))
-    rep_sent_model = joblib.load(os.path.join(MODEL_DIR, "LinearSVC_republican_sentiment_classifier.joblib"))
-
-    # Predict party
-    print("Classifying party affiliation...")
-    unlabelled_df['party'] = party_model.predict(unlabelled_df['clean_text'])
-
-    # Predict sentiment for each party
-    print("Classifying sentiment for Democrats...")
-    dem_mask = unlabelled_df['party'] == 'democrat'
-    unlabelled_df.loc[dem_mask, 'sentiment'] = dem_sent_model.predict(
-        unlabelled_df.loc[dem_mask, 'clean_text']
-    )
-
-    print("Classifying sentiment for Republicans...")
-    rep_mask = unlabelled_df['party'] == 'republican'
-    unlabelled_df.loc[rep_mask, 'sentiment'] = rep_sent_model.predict(
-        unlabelled_df.loc[rep_mask, 'clean_text']
-    )
-
-    # Save predictions
-    unlabelled_df.to_parquet(PREDICTIONS_PARQUET, index=False)
-    print(f"\nPredictions saved: {PREDICTIONS_PARQUET}")
-    # else:
-    #     print(f"\nLoading existing predictions: {PREDICTIONS_PARQUET}")
-    #     unlabelled_df = pd.read_parquet(PREDICTIONS_PARQUET)
-    
-    print(f"\nPrediction Summary:")
-    print(f"  Total predictions: {len(unlabelled_df):,}")
-    print(f"\nParty Distribution (Predicted):")
-    print(unlabelled_df['party'].value_counts())
-    print(f"\nSentiment by Party (Predicted):")
-    print(unlabelled_df.groupby(['party', 'sentiment']).size())
     
     total_time = time.time() - total_start
     print(f"Total runtime: {total_time/60:.2f} minutes ({total_time:.2f} seconds)")
